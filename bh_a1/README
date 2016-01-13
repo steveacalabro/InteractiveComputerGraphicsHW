@@ -1,0 +1,22 @@
+CS537 Homework Assignment 1 Getting Started: 
+Author: Bingyao Huang
+Date: 01/09/2016
+Language: C++
+
+This code uses OpenGL to draw 1 red triangle, 1 red quadrilateral and 1 red pentagon in a window named "Red Triangle".
+
+Contents:
+	source files: red_triangle.cpp, InitShader.cpp
+	makefile: Makefile
+	library folder: include
+	
+
+Usage:	
+	make: the default target compiles all the code
+	make run: executes the program(s)
+	make clean: deletes all the object files and executable files.
+	
+	
+
+	
+
