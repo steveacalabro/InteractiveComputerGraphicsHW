@@ -31,8 +31,8 @@ init( void )
     // Create and initialize a buffer object
     glBindVertexArray( vao[0] );
     glGenBuffers( 1, &buffer );
-    glBindBuffer( GL_ARRAY_BUFFER, buffer );
-    glBufferData( GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW );
+    glBindBuffer( GL_ARRAY_BUFFER, buffer ); // bind buffer to the latest bind vertex array object.
+    glBufferData( GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW ); // pass vertex data to buffer
 
     glBindVertexArray( vao[1] );	
     glGenBuffers( 1, &buffer1 );
@@ -65,20 +65,20 @@ display( void )
     glEnableVertexAttribArray( loc );
     glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
                            BUFFER_OFFSET(0) );	
-    glDrawArrays( GL_TRIANGLES, 0, NumPoints );    // draw the points
+    glDrawArrays( GL_TRIANGLES, 0, NumPoints );    // draw the triangle	
 
     
     glBindBuffer( GL_ARRAY_BUFFER, buffer1 );
 
     glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
                            BUFFER_OFFSET(0) );
-    glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );    // draw the points
+    glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );    // draw the quadrilateral 
 	
     glBindBuffer( GL_ARRAY_BUFFER, buffer2 );
 
     glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
                            BUFFER_OFFSET(0) );
-    glDrawArrays( GL_TRIANGLE_STRIP, 0, 5);    // draw the points
+    glDrawArrays( GL_TRIANGLE_STRIP, 0, 5);    // draw the pentagon
 	
 	glFlush();
 }
