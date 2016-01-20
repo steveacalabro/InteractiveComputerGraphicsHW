@@ -1,12 +1,12 @@
-CS537 Homework Assignment 1 Getting Started: 
+CS537 Homework Assignment 2: Drawing 2D Polygons with Color
 Author: Bingyao Huang
-Date: 01/09/2016
+Date: 01/20/2016
 Language: C++
 
-This code uses OpenGL to draw 1 red triangle, 1 red quadrilateral and 1 red pentagon in a window named "Red Triangle".
+This code uses OpenGL to draw multiple colored geometries in two windows.
 
 Contents:
-	source files: red_triangle.cpp, InitShader.cpp
+	source files: main.cpp, part2.cpp, InitShader.cpp
 	makefile: Makefile
 	library folder: include
 	
