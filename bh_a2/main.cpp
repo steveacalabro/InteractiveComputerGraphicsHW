@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA);
-	glutInitWindowSize(512, 512);
+	glutInitWindowSize(500, 500);
 
 	glutCreateWindow("ICG HW2");
 	glewExperimental = GL_TRUE;
