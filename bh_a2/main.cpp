@@ -1,5 +1,4 @@
-// First new GL program
-// Just makes a red triangle
+// HW2
 
 #include "Angel.h"
 #include <string.h>
@@ -68,17 +67,23 @@ GLuint initVAO(GLuint program, T1 *verts, T2 *colors, int numPoints)
 
 
 void changeSquareVerts(vec2 *verts, float x, float y, float r) {
-	verts[0] = vec2(x+r*cos(DegreesToRadians * 45), y + r*sin(DegreesToRadians * 45));
-	verts[1] = vec2(x+r*cos(DegreesToRadians * 135), y + r*sin(DegreesToRadians * 135));
-	verts[2] = vec2(x+r*cos(DegreesToRadians * 225), y + r*sin(DegreesToRadians * 225));
-	verts[3] = vec2(x+r*cos(DegreesToRadians * 315), y + r*sin(DegreesToRadians * 315));
+	verts[0] = vec2(x + r*cos(DegreesToRadians * 45), y + r*sin(DegreesToRadians * 45));
+	verts[1] = vec2(x + r*cos(DegreesToRadians * 135), y + r*sin(DegreesToRadians * 135));
+	verts[2] = vec2(x + r*cos(DegreesToRadians * 225), y + r*sin(DegreesToRadians * 225));
+	verts[3] = vec2(x + r*cos(DegreesToRadians * 315), y + r*sin(DegreesToRadians * 315));
 
 }
 
 void init(void)
 {
-	// Load shaders and use the resulting shader program
+
+#ifdef __linux__ 
+	program = InitShader("vshader21.glsl", "fshader21.glsl");
+#elif _WIN32
 	program = InitShader("..\\vshader21.glsl", "..\\fshader21.glsl");
+#endif
+	// Load shaders and use the resulting shader program
+	
 
 	// Specifiy the vertices and color for geometries
 	float x = 0.7;

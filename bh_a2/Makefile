@@ -3,9 +3,9 @@ GL_OPTIONS=-lGLEW -lGL -lglut
 OPTIONS=$(GCC_OPTIONS) $(GL_OPTIONS)
 
 all:
-	g++  red_triangle.cpp Common/InitShader.o $(OPTIONS) -o red_triangle
+	g++  main.cpp Common/InitShader.o $(OPTIONS) -o main
 run:
-	./red_triangle
+	./main
 clean:
-	rm -rf *.o red_triangle
+	rm -rf *.o main
 
