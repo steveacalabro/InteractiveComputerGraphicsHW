@@ -76,13 +76,13 @@ void changeSquareVerts(vec2 *verts, float x, float y, float r) {
 
 void init(void)
 {
-
+	// Load shaders and use the resulting shader program based on the OS
 #ifdef __linux__ 
 	program = InitShader("vshader21.glsl", "fshader21.glsl");
 #elif _WIN32
 	program = InitShader("..\\vshader21.glsl", "..\\fshader21.glsl");
 #endif
-	// Load shaders and use the resulting shader program
+	
 	
 
 	// Specifiy the vertices and color for geometries
@@ -208,6 +208,11 @@ void keyboard(unsigned char key, int x, int y)
 
 //----------------------------------------------------------------------------
 
+void myReshape(int w, int h) {
+	glViewport(0, 0, w, h);
+}
+
+//----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
@@ -221,7 +226,7 @@ int main(int argc, char **argv)
 
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
-
+	glutReshapeFunc(myReshape);
 	glutMainLoop();
 	return 0;
 
