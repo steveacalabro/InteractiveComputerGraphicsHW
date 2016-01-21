@@ -2,6 +2,7 @@
 
 #include "Angel.h"
 #include <string.h>
+#include <math.h>
 using namespace std;
 
 GLuint program;
@@ -10,7 +11,7 @@ float angle;
 const int NUM_CIRCILE_POINTS = 100;
 const int NUM_TRIANGLE_POINTS = 3;
 const int NUM_SQUARE_POINTS = 4;
-
+float red, green, blue;
 //--------------------------------------------------------------------------
 
 template <typename T>
@@ -213,6 +214,18 @@ void myReshape(int w, int h) {
 }
 
 //----------------------------------------------------------------------------
+
+
+void timerColor(int value) {
+	// get new color or a value in [0,1]
+	red = (1.0*(rand() % 256)) / 256.0;
+	green = (1.0*(rand() % 256)) / 256.0;
+	blue = (1.0*(rand() % 256)) / 256.0;
+	// draw it + reinitialise timer
+	glutPostRedisplay();
+	glutTimerFunc(1000, timerColor, 0);
+}
+
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
@@ -227,6 +240,13 @@ int main(int argc, char **argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutReshapeFunc(myReshape);
+
+	// change color each second
+	glutTimerFunc(100, timerColor, 0);
+
+	// change the shape after five seconds
+	//glutTimerFunc(5000, timerShape, 0);
+
 	glutMainLoop();
 	return 0;
 
