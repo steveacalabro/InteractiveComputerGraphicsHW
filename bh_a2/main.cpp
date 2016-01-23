@@ -2,7 +2,6 @@
 
 #include "Angel.h"
 #include <string.h>
-#include <math.h>
 using namespace std;
 
 GLuint program;
@@ -15,7 +14,7 @@ float red, green, blue;
 //--------------------------------------------------------------------------
 
 template <typename T>
-GLuint initArrayBufferForLaterUse(T *vertexData, int numPoints)
+GLuint initArrayBufferForLaterUse(const T *vertexData, const int numPoints)
 {	
 	GLuint tempBuffer;
 	glGenBuffers(1, &tempBuffer); // Create a buffer object
@@ -33,7 +32,7 @@ GLuint initArrayBufferForLaterUse(T *vertexData, int numPoints)
 }
 
 // Assign the buffer objects and enable the assignment
-void initAttributeVariable(GLuint &program, string a_attribute, GLuint buffer, int numComponents)
+void initAttributeVariable(const GLuint &program, const string a_attribute, const GLuint buffer, const int numComponents)
 {
 	const char *c_str = a_attribute.c_str();
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -44,7 +43,7 @@ void initAttributeVariable(GLuint &program, string a_attribute, GLuint buffer, i
 
 // create Vertex Array Object
 template <typename T1, typename T2>
-GLuint initVAO(GLuint program, T1 *verts, T2 *colors, int numPoints)
+GLuint initVAO(const GLuint program, const T1 *verts, const T2 *colors, const int numPoints)
 {
 	// Create a vertex array object
 	GLuint vao;
@@ -168,7 +167,6 @@ void init(void)
 
 
 
-
 //----------------------------------------------------------------------------
 
 void display(void)
@@ -216,7 +214,7 @@ void myReshape(int w, int h) {
 //----------------------------------------------------------------------------
 
 
-void timerColor(int value) {
+void timerColor(const int value) {
 	// get new color or a value in [0,1]
 	red = (1.0*(rand() % 256)) / 256.0;
 	green = (1.0*(rand() % 256)) / 256.0;
