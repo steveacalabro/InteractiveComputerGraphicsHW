@@ -42,6 +42,7 @@ _ReSharper*/
 *.*~
 *.m4v
 *~
-
+*.cd
+*.o
 main
 part2
