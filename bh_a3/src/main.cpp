@@ -3,6 +3,7 @@
 #include "Angel.h"
 #include <string>
 #include <vector>
+#include "main.h"
 using namespace std;
 
 
@@ -10,9 +11,12 @@ GLuint program;
 //GLuint ellipseVAO, circleVAO, triangleVAO;
 //GLuint squaresVAO[6];
 //vector<GLuint> randomCircleVAO;
-float angle, t, dr;
+float angle, t;
 float dt = 0.001;
-float r = 0.2;
+
+float r = 0.01;
+float dr = 0.01;
+bool reduceR = false;
 const int NUM_CIRCILE_POINTS = 100;
 const int NUM_TRIANGLE_POINTS = 3;
 const int NUM_SQUARE_POINTS = 4;
@@ -146,10 +150,18 @@ void drawCircle(const float x, const float y, const float r) {
 		float theta = i * 360 / (NUM_CIRCILE_POINTS);
 		float rad = DegreesToRadians * theta;
 		cicleVerts[i] = vec2(x + r*cos(rad), y + r*sin(rad));
-		circleColor[i] = vec4(1.0, 0.0, 0.0, 1.0);
+		circleColor[i] = vec4(red*theta / 360, green*theta / 360, blue*theta / 360, 1.0);
 	}
 
-	circleVAO = initVAO(program, cicleVerts, circleColor, NUM_CIRCILE_POINTS, false);
+	if (!circleVAO.id) {
+		circleVAO = initVAO(program, cicleVerts, circleColor, NUM_CIRCILE_POINTS, true);
+	}
+	else
+	{
+		updateVAO(circleVAO, cicleVerts, NUM_CIRCILE_POINTS, VERTEX);
+		updateVAO(circleVAO, circleColor, NUM_CIRCILE_POINTS, COLOR);
+	}
+	
 }
 
 void drawRandomCircle(const float x, const float y) {
@@ -160,7 +172,7 @@ void drawRandomCircle(const float x, const float y) {
 		float theta = i * 360 / (NUM_CIRCILE_POINTS);
 		float rad = DegreesToRadians * theta;
 		randomCicleVerts[i] = vec2(x + r*cos(rad), y + r*sin(rad));
-		randomCircleColor[i] = vec4(randR, randG, randB, 1.0);
+		randomCircleColor[i] = vec4(randR*theta / 360 , randG*theta / 360, randB*theta / 360, 1.0);
 	}
 
 	randomCircleVAO.push_back(initVAO(program, randomCicleVerts, randomCircleColor, NUM_CIRCILE_POINTS, true));
@@ -172,7 +184,7 @@ void drawEllipse(const float x, const float y, const float r) {
 		float theta = i * 360 / (NUM_CIRCILE_POINTS);
 		float rad = DegreesToRadians * theta;
 		ellipseVerts[i] = vec2(x + r*cos(rad), y + 0.6*r*sin(rad));
-		ellipseColor[i] = 1.0;
+		ellipseColor[i] = theta / 360;
 	}
 	ellipseVAO = initVAO(program, ellipseVerts, ellipseColor, NUM_CIRCILE_POINTS, false);
 }
@@ -298,8 +310,13 @@ void displayMainWindow2(void)
 
 	glClear(GL_COLOR_BUFFER_BIT);     // clear the window
 
-	// display static red circle
+	// display breathing red circle
+	drawCircle(0.5, 0.0, r);
+
+	// display spinning triangle
 	drawTriangle(-0.5, 0, 0.5);
+
+
 	glBindVertexArray(circleVAO.id);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, NUM_CIRCILE_POINTS);
 
@@ -459,15 +476,25 @@ void timerColor(const int value) {
 void timerShape(const int value) {
 	// get new radius
 
-	if (r > 1.0) {
-		r -= dr;
+	if (!stop) {
+		if (reduceR) {
+			r -= dr;
+		}
+		else {
+			r += dr;
+		}
+
+		if (r > 0.4) {
+			reduceR = true;
+		}
+		if (r < 0.1) {
+			reduceR = false;
+		}
 	}
-	else {
-		r += dr;
-	}
+	
 	// draw it + reinitialise timer
-	glutPostRedisplay();
-	glutTimerFunc(500, timerShape, 0);
+	glutPostWindowRedisplay(mainWindow2);
+	glutTimerFunc(50, timerShape, 0);
 }
 
 void myIdle() {
@@ -543,10 +570,12 @@ int main(int argc, char **argv)
 	// main window 2
 	mainWindow2 = glutCreateWindow("window 2");
 	initShaderProgram();
-	drawCircle(0.5, 0.0, 0.5);
+	
 	glutDisplayFunc(displayMainWindow2);
 	//glutMouseFunc(myMouse);
 	glutKeyboardFunc(keyboard);
+	// change color each second
+	glutTimerFunc(100, timerShape, 0);
 	glutReshapeFunc(myReshape);
 	glutIdleFunc(myIdle);
 	glutMainLoop();
