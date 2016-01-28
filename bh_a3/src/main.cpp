@@ -7,9 +7,9 @@ using namespace std;
 
 
 GLuint program;
-GLuint ellipseVAO, circleVAO, triangleVAO;
-GLuint squaresVAO[6];
-vector<GLuint> randomCircleVAO;
+//GLuint ellipseVAO, circleVAO, triangleVAO;
+//GLuint squaresVAO[6];
+//vector<GLuint> randomCircleVAO;
 float angle, t, dr;
 float dt = 0.001;
 float r = 0.2;
@@ -38,13 +38,25 @@ float randR, randG, randB;
 float spinSpeed = 1.0;
 
 
-enum {WHITE, BLACK, GREEN, RED, BLUE};
+enum { WHITE, BLACK, GREEN, RED, BLUE };
+enum { VERTEX, COLOR };
 bool stop = false;
+
+
+struct VertexArrayObject
+{
+	GLuint id;
+	GLuint vertVBO;
+	GLuint colorVBO;
+};
+
+VertexArrayObject ellipseVAO, circleVAO, triangleVAO, squaresVAO[6];
+vector<VertexArrayObject> randomCircleVAO;
 //--------------------------------------------------------------------------
 
 template <typename T>
 GLuint initArrayBufferForLaterUse(const T *vertexData, const int numPoints, const bool isDynamic)
-{	
+{
 	GLuint vbo;
 	glGenBuffers(1, &vbo); // Create a buffer object
 	// Write data into the buffer object
@@ -52,9 +64,9 @@ GLuint initArrayBufferForLaterUse(const T *vertexData, const int numPoints, cons
 	int dataSize = sizeof(vertexData[0])*numPoints;
 	glBindBuffer(GL_ARRAY_BUFFER, vbo); // bind buffer to the latest bind vertex array object.
 	if (isDynamic) {
-		glBufferData(GL_ARRAY_BUFFER, dataSize, &vertexData[0], GL_DYNAMIC_DRAW); // pass vertex data to buffer		
+		glBufferData(GL_ARRAY_BUFFER, dataSize, &vertexData[0], GL_STREAM_DRAW); // pass vertex data to buffer		
 	}
-	else {		
+	else {
 		glBufferData(GL_ARRAY_BUFFER, dataSize, &vertexData[0], GL_STATIC_DRAW); // pass vertex data to buffer		
 	}
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL);
@@ -73,13 +85,15 @@ void initAttributeVariable(const GLuint &program, const string a_attribute, cons
 
 // create Vertex Array Object
 template <typename T1, typename T2>
-GLuint initVAO(const GLuint program, const T1 *verts, const T2 *colors, const int numPoints, const bool isDynamic)
+VertexArrayObject initVAO(const GLuint program, const T1 *verts, const T2 *colors, const int numPoints, const bool isDynamic)
 {
 	// Create a vertex array object
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-	
+
+
+	// init vertex and color vbo
 	GLuint vertBuffer = initArrayBufferForLaterUse(verts, numPoints, isDynamic);
 	GLuint colorBuffer = initArrayBufferForLaterUse(colors, numPoints, isDynamic);
 
@@ -89,18 +103,31 @@ GLuint initVAO(const GLuint program, const T1 *verts, const T2 *colors, const in
 	initAttributeVariable(program, "vPosition", vertBuffer, numVertComponents);
 	initAttributeVariable(program, "aColor", colorBuffer, numColorComponents);
 
-	// unbind
+	// unbind vao
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-	return vao;
+	//VertexArrayObject tempVAO;
+	return VertexArrayObject{ vao, vertBuffer, colorBuffer };
 }
 
+// update the vbo that is binded by the vao
 template <typename T>
-void updateVAO(const GLuint &vao, const T *vertexData, const int numPoints, ) {
-	int dataSize = sizeof(vertexData[0])*numPoints;
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferSubData(vao, 0, dataSize, &vertexData[0]);
+void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, const int whichVBO) {
+	int dataSize = sizeof(vertData[0])*numPoints;
+
+	GLuint vbo;
+	if (whichVBO == COLOR) {
+		vbo = VAO.colorVBO;
+	}
+	else if (whichVBO == VERTEX) {
+		vbo = VAO.vertVBO;
+	}
+	else {
+		cout << "No such VBO in this VAO\n";
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, &vertData[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, NULL);
 }
 
 void changeSquareVerts(vec2 *verts, float x, float y, float r, float angle) {
@@ -121,7 +148,8 @@ void drawCircle(const float x, const float y, const float r) {
 		cicleVerts[i] = vec2(x + r*cos(rad), y + r*sin(rad));
 		circleColor[i] = vec4(1.0, 0.0, 0.0, 1.0);
 	}
-	circleVAO = initVAO(program, cicleVerts, circleColor, NUM_CIRCILE_POINTS);
+
+	circleVAO = initVAO(program, cicleVerts, circleColor, NUM_CIRCILE_POINTS, false);
 }
 
 void drawRandomCircle(const float x, const float y) {
@@ -134,8 +162,8 @@ void drawRandomCircle(const float x, const float y) {
 		randomCicleVerts[i] = vec2(x + r*cos(rad), y + r*sin(rad));
 		randomCircleColor[i] = vec4(randR, randG, randB, 1.0);
 	}
-	
-	randomCircleVAO.push_back(initVAO(program, randomCicleVerts, randomCircleColor, NUM_CIRCILE_POINTS));
+
+	randomCircleVAO.push_back(initVAO(program, randomCicleVerts, randomCircleColor, NUM_CIRCILE_POINTS, true));
 }
 
 void drawEllipse(const float x, const float y, const float r) {
@@ -146,13 +174,13 @@ void drawEllipse(const float x, const float y, const float r) {
 		ellipseVerts[i] = vec2(x + r*cos(rad), y + 0.6*r*sin(rad));
 		ellipseColor[i] = 1.0;
 	}
-	ellipseVAO = initVAO(program, ellipseVerts, ellipseColor, NUM_CIRCILE_POINTS);
+	ellipseVAO = initVAO(program, ellipseVerts, ellipseColor, NUM_CIRCILE_POINTS, false);
 }
 
 void drawTriangle(const float x, const float y, const float r) {
 	// triangle
-	float angle = -t*2*spinSpeed;
-	triangleVerts[0] = vec2(x + r*cos(DegreesToRadians * 90 + angle),  y + r*sin(DegreesToRadians * 90 + angle));
+	float angle = -t * 2 * spinSpeed;
+	triangleVerts[0] = vec2(x + r*cos(DegreesToRadians * 90 + angle), y + r*sin(DegreesToRadians * 90 + angle));
 	triangleVerts[1] = vec2(x + r*cos(DegreesToRadians * 210 + angle), y + r*sin(DegreesToRadians * 210 + angle));
 	triangleVerts[2] = vec2(x + r*cos(DegreesToRadians * 330 + angle), y + r*sin(DegreesToRadians * 330 + angle));
 
@@ -160,25 +188,49 @@ void drawTriangle(const float x, const float y, const float r) {
 		triangleColor[i] = vec4(red, green, blue, 1.0);
 	}
 
-	triangleVAO = initVAO(program, triangleVerts, triangleColor, NUM_TRIANGLE_POINTS);
+
+	if (!triangleVAO.id) {
+		triangleVAO = initVAO(program, triangleVerts, triangleColor, NUM_TRIANGLE_POINTS, true);
+	}
+	else
+	{
+		updateVAO(triangleVAO, triangleVerts, NUM_TRIANGLE_POINTS, VERTEX);
+		updateVAO(triangleVAO, triangleColor, NUM_TRIANGLE_POINTS, COLOR);
+	}
+
 }
 
 
 void drawSquares(const float x, const float y, const float r) {
 
 
-	bool flag = true;
+	bool flag = true;  // flip to draw white and black squares
 	float angle = t*spinSpeed;
 	for (int i = 0; i < NUM_SQUARES; i++) {
 		changeSquareVerts(squareVerts, x, y, r - i*0.1, angle);
 		if (flag) {
-			squaresVAO[i] = initVAO(program, squareVerts, squareColorWhite, NUM_SQUARE_POINTS);
+			if (!squaresVAO[i].id) {
+				squaresVAO[i] = initVAO(program, squareVerts, squareColorWhite, NUM_SQUARE_POINTS, true);
+			}
+			else
+			{
+				updateVAO(squaresVAO[i], squareVerts, NUM_SQUARE_POINTS, VERTEX);
+				updateVAO(squaresVAO[i], squareColorWhite, NUM_SQUARE_POINTS, COLOR);
+			}
+
 		}
 		else
 		{
-			squaresVAO[i] = initVAO(program, squareVerts, squareColorBlack, NUM_SQUARE_POINTS);
+			if (!squaresVAO[i].id) {
+				squaresVAO[i] = initVAO(program, squareVerts, squareColorBlack, NUM_SQUARE_POINTS, true);
+			}
+			else
+			{
+				updateVAO(squaresVAO[i], squareVerts, NUM_SQUARE_POINTS, VERTEX);
+			}
+
 		}
-		flag = !flag;		
+		flag = !flag;
 	}
 }
 
@@ -193,8 +245,8 @@ void initShaderProgram(void)
 #elif _WIN32
 	program = InitShader("..\\..\\src\\shader\\vshader21.glsl", "..\\..\\src\\shader\\fshader21.glsl");
 #endif
-		
-	glUseProgram(program);		
+
+	glUseProgram(program);
 	glClearColor(0.0, 0.0, 0.0, 1.0); // black background
 }
 
@@ -211,20 +263,19 @@ void displayMainWindow(void)
 	drawSquares(0.0, 0.0, 0.6);
 	// display spinning squares
 	for (int i = 0; i < NUM_SQUARES; i++) {
-		glBindVertexArray(squaresVAO[i]);
+		glBindVertexArray(squaresVAO[i].id);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, NUM_SQUARE_POINTS);
 	}
-	glDeleteBuffers(6, squaresVAO);
+
 
 
 	// display random color circles
 	for (int i = 0; i < randomCircleVAO.size(); i++) {
-		glBindVertexArray(randomCircleVAO[i]);
+		glBindVertexArray(randomCircleVAO[i].id);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, NUM_CIRCILE_POINTS);
-		//glDeleteBuffers(1, &randomCircleVAO[i]);
-		//randomCircleVAO.erase(randomCircleVAO.begin() + i);
+
 	}
-	
+
 	glutSwapBuffers();
 
 }
@@ -236,7 +287,7 @@ void displaySubWindow(void)
 	glClear(GL_COLOR_BUFFER_BIT);     // clear the window
 
 	// display the Ellipse
-	glBindVertexArray(ellipseVAO);
+	glBindVertexArray(ellipseVAO.id);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, NUM_CIRCILE_POINTS);
 	glutSwapBuffers();
 
@@ -249,15 +300,15 @@ void displayMainWindow2(void)
 
 	// display static red circle
 	drawTriangle(-0.5, 0, 0.5);
-	glBindVertexArray(circleVAO);
+	glBindVertexArray(circleVAO.id);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, NUM_CIRCILE_POINTS);
 
 
 	// display triangle
-	glBindVertexArray(triangleVAO);
+	glBindVertexArray(triangleVAO.id);
 	glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLE_POINTS);
 	glutSwapBuffers();
-	glDeleteBuffers(1, &triangleVAO);
+
 
 }
 //----------------------------------------------------------------------------+
@@ -265,21 +316,21 @@ void subwindowMenu(int option)
 {
 	switch (option)
 	{
-		case WHITE:
-			glClearColor(1.0, 1.0, 1.0, 1.0); // white background
-			break;
-		case BLACK:
-			glClearColor(0.0, 0.0, 0.0, 1.0); // black background
-			break;
-		case GREEN:
-			glClearColor(0.0, 1.0, 0.0, 1.0); // green background
-			break;
-		case RED:
-			glClearColor(1.0, 0.0, 0.0, 1.0); // red background
-			break;
-		case BLUE:
-			glClearColor(0.0, 0.0, 1.0, 1.0); // blue background
-			break;
+	case WHITE:
+		glClearColor(1.0, 1.0, 1.0, 1.0); // white background
+		break;
+	case BLACK:
+		glClearColor(0.0, 0.0, 0.0, 1.0); // black background
+		break;
+	case GREEN:
+		glClearColor(0.0, 1.0, 0.0, 1.0); // green background
+		break;
+	case RED:
+		glClearColor(1.0, 0.0, 0.0, 1.0); // red background
+		break;
+	case BLUE:
+		glClearColor(0.0, 0.0, 1.0, 1.0); // blue background
+		break;
 	}
 
 	glutPostRedisplay();
@@ -289,22 +340,22 @@ void squareColorMenu(int option)
 {
 	switch (option)
 	{
-		case WHITE:
-			for (int i = 0; i < 4; i++) {
-				squareColorWhite[i] = vec4(1.0, 1.0, 1.0, 1.0);
-			}
-			break;
-	
-		case GREEN:
-			for (int i = 0; i < 4; i++) {
-				squareColorWhite[i] = vec4(0.0, 1.0, 0.0, 1.0);
-			}
-			break;
-		case RED:
-			for (int i = 0; i < 4; i++) {
-				squareColorWhite[i] = vec4(1.0, 0.0, 0.0, 1.0);
-			}
-			break;
+	case WHITE:
+		for (int i = 0; i < 4; i++) {
+			squareColorWhite[i] = vec4(1.0, 1.0, 1.0, 1.0);
+		}
+		break;
+
+	case GREEN:
+		for (int i = 0; i < 4; i++) {
+			squareColorWhite[i] = vec4(0.0, 1.0, 0.0, 1.0);
+		}
+		break;
+	case RED:
+		for (int i = 0; i < 4; i++) {
+			squareColorWhite[i] = vec4(1.0, 0.0, 0.0, 1.0);
+		}
+		break;
 
 	}
 
@@ -328,9 +379,9 @@ void animationMenu(int option)
 
 void createAnimationMenus() {
 	GLuint menu, submenu;
-	
+
 	// create a sub menu and add entries to it
-	
+
 	submenu = glutCreateMenu(squareColorMenu);
 	glutAddMenuEntry("White", WHITE);
 	glutAddMenuEntry("Red", RED);
@@ -373,16 +424,16 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 void keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
-		case 'r': red = 1.0; green = 0.0; blue = 0.0; break;
-		case 'g': red = 0.0; green = 1.0; blue = 0.0; break;
-		case 'b': red = 0.0; green = 0.0; blue = 1.0; break;
-		case 'y': red = 1.0; green = 1.0; blue = 0.0; break;
-		case 'o': red = 1.0; green = 0.5; blue = 0.0; break;
-		case 'p': red = 1.0; green = 0.0; blue = 1.0; break;
-		case 'w': red = 1.0; green = 1.0; blue = 1.0; break;
-		case 033:
-			exit(EXIT_SUCCESS);
-			break;
+	case 'r': red = 1.0; green = 0.0; blue = 0.0; break;
+	case 'g': red = 0.0; green = 1.0; blue = 0.0; break;
+	case 'b': red = 0.0; green = 0.0; blue = 1.0; break;
+	case 'y': red = 1.0; green = 1.0; blue = 0.0; break;
+	case 'o': red = 1.0; green = 0.5; blue = 0.0; break;
+	case 'p': red = 1.0; green = 0.0; blue = 1.0; break;
+	case 'w': red = 1.0; green = 1.0; blue = 1.0; break;
+	case 033:
+		exit(EXIT_SUCCESS);
+		break;
 	}
 }
 
@@ -424,27 +475,28 @@ void myIdle() {
 	if (!stop) {
 		t += dt;
 	}
-	
+
 	glutPostWindowRedisplay(mainWindow);
 	glutPostWindowRedisplay(mainWindow2);
 }
 
 
 
+//------------------------ Main function ------------------------------------------
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	
 
-	// main window
+
+	/********* main window  ****************/ 
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(500, 500);
 	mainWindow = glutCreateWindow("ICG HW3");
 	glewExperimental = GL_TRUE;
 	glewInit();
-	initShaderProgram();
+	initShaderProgram(); // note that each windows should have a shader program
 	// set squares colors
 
 	for (int i = 0; i < 4; i++) {
@@ -467,23 +519,23 @@ int main(int argc, char **argv)
 
 
 
-	// subwindow
+	/****** subwindow1 ********************/
 	int border = 0;
 	int w = 150;
 	int h = 120;
 
-	subWindow1 = glutCreateSubWindow(mainWindow, border, border, w, h );
+	subWindow1 = glutCreateSubWindow(mainWindow, border, border, w, h);
 	createColorMenus();
 	initShaderProgram();
 	drawEllipse(0.0, 0.0, 0.5);
 
-	
+
 	// Must register a display func for each window
 	glutDisplayFunc(displaySubWindow);
 
 
 
-	// windows 2 that displays triangle and circle
+	/******  windows 2 that displays triangle and circle  ********************/
 	glutInitWindowPosition(600, 100);
 	glutInitWindowSize(500, 500);
 
@@ -497,7 +549,6 @@ int main(int argc, char **argv)
 	glutKeyboardFunc(keyboard);
 	glutReshapeFunc(myReshape);
 	glutIdleFunc(myIdle);
-
 	glutMainLoop();
 
 
