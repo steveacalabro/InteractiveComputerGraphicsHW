@@ -1,21 +1,17 @@
-﻿// HW3
+﻿// HW4
 
 #include "Angel.h"
 #include <string>
 #include <vector>
-#include "main.h"
 using namespace std;
 
-
+GLenum err;
 GLuint program;
-//GLuint ellipseVAO, circleVAO, triangleVAO;
-//GLuint squaresVAO[6];
-//vector<GLuint> randomCircleVAO;
 float angle, t;
-float dt = 0.001;
+const float dt = 0.001;
 
 float r = 0.01;
-float dr = 0.01;
+const float dr = 0.01;
 bool reduceR = false;
 const int NUM_CIRCILE_POINTS = 100;
 const int NUM_TRIANGLE_POINTS = 3;
@@ -39,12 +35,12 @@ vec4 squareColorWhite[NUM_SQUARE_POINTS];
 
 float red = 1.0, green, blue;
 float randR, randG, randB;
-float spinSpeed = 1.0;
+float spinSpeed = 5.0;
 
 
 enum { WHITE, BLACK, GREEN, RED, BLUE };
 enum { VERTEX, COLOR };
-bool stop = false;
+bool stopAnimation = false;
 
 
 struct VertexArrayObject
@@ -255,7 +251,7 @@ void initShaderProgram(void)
 #ifdef __linux__ 
 	program = InitShader("./shader/vshader21.glsl", "./shader/fshader21.glsl");
 #elif _WIN32
-	program = InitShader("..\\..\\src\\shader\\vshader21.glsl", "..\\..\\src\\shader\\fshader21.glsl");
+	program = InitShader("..\\src\\shader\\vshader21.glsl", "..\\src\\shader\\fshader21.glsl");
 #endif
 
 	glUseProgram(program);
@@ -384,10 +380,10 @@ void animationMenu(int option)
 	switch (option)
 	{
 	case 0:
-		stop = true;
+		stopAnimation = true;
 		break;
 	case 1:
-		stop = false;
+		stopAnimation = false;
 		break;
 	}
 
@@ -476,7 +472,7 @@ void timerColor(const int value) {
 void timerShape(const int value) {
 	// get new radius
 
-	if (!stop) {
+	if (!stopAnimation) {
 		if (reduceR) {
 			r -= dr;
 		}
@@ -499,7 +495,7 @@ void timerShape(const int value) {
 
 void myIdle() {
 	/* change something over time*/
-	if (!stop) {
+	if (!stopAnimation) {
 		t += dt;
 	}
 
@@ -509,37 +505,85 @@ void myIdle() {
 
 
 
+void assignGlutFunctions(void(*display)(), void(*keyboad)(unsigned char, int, int) = NULL, void(*mouse)(int, int, int, int) = NULL,
+						 void(*reshape)(int, int) = NULL, void(*timer)(int) = NULL, void(*idle)() = NULL, void(*menuFunc)() = NULL) 
+{
+	
+	glutDisplayFunc(display);
+
+	if (mouse) {
+		glutMouseFunc(mouse);
+	}
+
+	if (keyboad) {
+		glutKeyboardFunc(keyboad);
+	}
+	
+	if (reshape) {
+		glutReshapeFunc(reshape);
+	}
+	
+	if (timer) {
+		int interval = 100;
+		glutTimerFunc(interval, timer, 0);
+	}
+	if (idle) {
+		glutIdleFunc(idle);
+	}
+	
+
+	// menu function
+	if (menuFunc) {
+		(*menuFunc)();
+	}
+		
+}
+
+
+
+int createOpenGLContext(const char* windowName, const int x, const int y, const int w, const int h) {
+
+	glutInitWindowPosition(x, y);
+	glutInitWindowSize(w, h);
+
+	int windowID = glutCreateWindow(windowName);
+
+	if (!err) {
+		glewExperimental = GL_TRUE;
+		GLenum err = glewInit();
+	}
+	
+	if (GLEW_OK != err)
+	{
+		/* Problem: glewInit failed, something is seriously wrong. */
+		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+	}
+	//fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
+
+	initShaderProgram(); // note that each windows should have a shader program
+
+	
+	return windowID;
+}
+
+
+
 //------------------------ Main function ------------------------------------------
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 
 
-	/********* main window  ****************/ 
-	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(500, 500);
-	mainWindow = glutCreateWindow("ICG HW3");
-	glewExperimental = GL_TRUE;
-	glewInit();
-	initShaderProgram(); // note that each windows should have a shader program
+	///********* main window  ****************/ 
+	mainWindow = createOpenGLContext("ICG HW3", 100, 100,500, 500);
+	assignGlutFunctions(displayMainWindow, keyboard, myMouse, myReshape, timerColor, myIdle, createAnimationMenus);
+	
 	// set squares colors
-
 	for (int i = 0; i < 4; i++) {
 		squareColorBlack[i] = vec4(0.0, 0.0, 0.0, 1.0);
 		squareColorWhite[i] = vec4(1.0, 1.0, 1.0, 1.0);
 	}
-
-	glutDisplayFunc(displayMainWindow);
-	glutMouseFunc(myMouse);
-	createAnimationMenus();
-	glutKeyboardFunc(keyboard);
-	glutReshapeFunc(myReshape);
-	// change color each second
-	glutTimerFunc(100, timerColor, 0);
-	glutIdleFunc(myIdle);
-
 
 	// change the shape after five seconds
 	//glutTimerFunc(5000, timerShape, 0);
@@ -552,35 +596,17 @@ int main(int argc, char **argv)
 	int h = 120;
 
 	subWindow1 = glutCreateSubWindow(mainWindow, border, border, w, h);
-	createColorMenus();
+
+	//createColorMenus();
 	initShaderProgram();
 	drawEllipse(0.0, 0.0, 0.5);
-
-
-	// Must register a display func for each window
-	glutDisplayFunc(displaySubWindow);
-
+	assignGlutFunctions(displaySubWindow, NULL, NULL, NULL, NULL, NULL, createColorMenus);
 
 
 	/******  windows 2 that displays triangle and circle  ********************/
-	glutInitWindowPosition(600, 100);
-	glutInitWindowSize(500, 500);
-
-
-	// main window 2
-	mainWindow2 = glutCreateWindow("window 2");
-	initShaderProgram();
-	
-	glutDisplayFunc(displayMainWindow2);
-	//glutMouseFunc(myMouse);
-	glutKeyboardFunc(keyboard);
-	// change color each second
-	glutTimerFunc(100, timerShape, 0);
-	glutReshapeFunc(myReshape);
-	glutIdleFunc(myIdle);
+	mainWindow2 = createOpenGLContext("window 2", 600, 100, 500, 500);
+	assignGlutFunctions(displayMainWindow2, keyboard, NULL, myReshape, timerShape, myIdle);
 	glutMainLoop();
-
-
 
 	return 0;
 
