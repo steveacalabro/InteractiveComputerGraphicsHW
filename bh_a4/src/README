@@ -1,29 +1,24 @@
-CS537 Homework Assignment 3: Interaction, Windows, Menus and Animation
+CS537 Homework Assignment 4: 3D Transformations and Geometry in OGL
 Author: Bingyao Huang
-Date: 01/27/2016
+Date: 02/03/2016
 Language: C++
 
-This code uses double buffering to:
-1. Create a main window with the "black & white" square
-2. Place an ellipse in a SubWindow of the main window. Set the sub-window's display function to draw the background a different color.
-3. Create a menu on the sub window only that allows the user to change the subwindow's background color.
-4. Draw a circle and triangle, which have the same color, in a separate window entitled “window 2”. Allow the user to change the color of these objects by typing a key, 'r' - red, 'g' - green, 'b' - blue, 'y' - yellow, 'o' - orange, 'p' - purple, 'w' - white.
-5. Animate the shapes using the idle function as follows:
-6. Make the squares rotate counter clockwise.
-7. Make the triangle rotate clockwise.
-8. Make the circle increase in size and then decrease in size as though it was “breathing”.
-9. Create a menu for the main window that is right-click activated with the following layout:
-	Stop Animation
-	Start Animation
-	Square Colors ->
-		 White
-		 Red
-		 Green
-Where each button does the indicated action.
-10. (Extra Credit) Alter the main window so that if a user clicks on it with the left click button, a new circle with a random color appears where s/he clicked.
+
+This code creates an OpenGL program that displays a colored cube. The user can transform the cube via key input. 
+
+1. Enable the depth test to ensure proper display. 
+
+2. A right click menu is created to defines the transformation to be modified. (SCALE, ROTATE, TRANSLATE). The transformations are applied in the order of scale, rotation, then translation.
+
+3. Use 'A', 'D', 'W', 'S', 'Q', 'E' for increasing and decreasing the X,Y,Z components of the current transformation.
+
+4. Use 'Z', 'X' for increasing and decreasing the delta added to the transformations.
+
+5. Press 'R' to reset the transformations
+
 
 Contents:
-	source files: main.cpp, InitShader.cpp
+	source files: src\*.cpp
 	makefile: Makefile
 	library folder: include
 	
