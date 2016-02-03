@@ -47,5 +47,4 @@ _ReSharper*/
 main
 part2
 *.db
-bh_a4/build/CMakeFiles/
-bh_a4/build/cmake_install.cmake
+bh_a4/build/
