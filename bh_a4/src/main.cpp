@@ -186,7 +186,7 @@ VertexArrayObject initVAO(const GLuint program, const T1 *verts, const T2 *indic
 
 // update the vbo that is binded by the vao
 template <typename T>
-void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, const int whichVBO) {
+void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, VBO_OPTION whichVBO) {
 	int dataSize = sizeof(vertData[0])*numPoints;
 
 	GLuint vbo = -1;
@@ -310,8 +310,8 @@ void resetTransformation() {
 
 void myKeyboard(unsigned char key, int x, int y)
 {
-	auto TX{ 0.0 }, TY{ 0.0 }, TZ{ 0.0 };
-	static auto delta{ 0.5 };
+	double TX{ 0.0 }, TY{ 0.0 }, TZ{ 0.0 };
+	static double delta{ 0.5 };
 	switch (key) {
 		// translate X
 	case 'd':case 'D': TX = delta; break;
@@ -441,6 +441,8 @@ int createOpenGLContext(const char* windowName, const int x, const int y, const 
 		GLenum err = glewInit();
 	}
 
+	
+
 	if (GLEW_OK != err)
 	{
 		/* Problem: glewInit failed, something is seriously wrong. */
@@ -499,12 +501,13 @@ void initScene() {
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-	glEnable(GL_DEPTH_TEST);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);	
 	glFrontFace(GL_CCW);
 
 	///********* main window  ****************/ 
 	mainWindow = createOpenGLContext("ICG HW4 - Color Cube", 200, 0, 500, 500);
+
+	glEnable(GL_DEPTH_TEST); //! Depth test must be enabled after the glewInit(), or it doesn't work
 	assignGlutFunctions(displayMainWindow, myKeyboard, nullptr, nullptr, nullptr, nullptr, createAnimationMenus);
 	initScene();
 
