@@ -1,4 +1,4 @@
-GCC_OPTIONS=-Wall -pedantic -I ./include
+GCC_OPTIONS=-Wall -pedantic -I ./include -std=c++11
 GL_OPTIONS=-lGLEW -lGL -lglut
 OPTIONS=$(GCC_OPTIONS) $(GL_OPTIONS)
 
@@ -8,5 +8,5 @@ all:
 run:
 	./main
 clean:
-	rm -rf *.o main part2
+	rm -rf *.o main
 
