@@ -311,16 +311,16 @@ void resetTransformation() {
 
 void myKeyboard(unsigned char key, int x, int y)
 {
-	double TX{ 0.0 }, TY{ 0.0 }, TZ{ 0.0 };
+	double camRadius{ 0.0 }, camHeight{ 0.0 }, TZ{ 0.0 };
 	static double delta{ 0.5 };
 	switch (key) {
 		// translate X
-	case 'd':case 'D': TX = delta; break;
-	case 'a':case 'A': TX = -delta; break;
+	case 'd':case 'D': camRadius = delta; break;
+	case 'a':case 'A': camRadius = -delta; break;
 
 		// translate Y
-	case 'w':case 'W': TY = delta; break;
-	case 's':case 'S': TY = -delta; break;
+	case 'w':case 'W': camHeight = delta; break;
+	case 's':case 'S': camHeight = -delta; break;
 
 		// translate Z		
 	case 'e': case 'E': TZ = delta; break;
@@ -360,24 +360,26 @@ void myKeyboard(unsigned char key, int x, int y)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (TX != 0.0 || TY != 0.0 || TZ != 0.0)
+	if (camRadius != 0.0 || camHeight != 0.0 || TZ != 0.0)
 	{
-		if (onScale) {
-			double sx{ 1 + TX }, sy{ 1 + TY }, sz{ 1 + TZ };
-			ColorCube.scale(sx, sy, sz);
+
+		//if (onScale) {
+			double sx{ 1 + camRadius }, sy{ 1 + camHeight }, sz{ 1 + TZ };
+			
 			fprintf(stdout, "scale color cube by : (%.2f, %.2f, %.2f)\n", sx, sy, sz);
-		}
-		else if (onRotate) {
-			ColorCube.rotate(TX, TY, TZ);
-			fprintf(stdout, "rotate color cube by : (%.2f, %.2f, %.2f)\n", TX, TY, TZ);
-		}
-		else if (onTranslate) {
-			ColorCube.translate(TX, TY, TZ);
-			fprintf(stdout, "translate color cube by : (%.2f, %.2f, %.2f)\n", TX, TY, TZ);
+		//}
+		//else if (onRotate) {
+			ColorCube.rotate(camRadius, camHeight, TZ);
+			fprintf(stdout, "rotate color cube by : (%.2f, %.2f, %.2f)\n", camRadius, camHeight, TZ);
+		//}
+		//else if (onTranslate) {
+			ColorCube.translate(camRadius, camHeight, TZ);
+			fprintf(stdout, "translate color cube by : (%.2f, %.2f, %.2f)\n", camRadius, camHeight, TZ);
 			//ColorCube.translationMatrix[0][3] += TX;
 			//ColorCube.translationMatrix[1][3] += TY;
 			//ColorCube.translationMatrix[2][3] += TZ;
-		}
+		//}
+			camera.translate(0.0, camHeight, 0.0);
 	}
 
 
