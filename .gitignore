@@ -47,4 +47,4 @@ _ReSharper*/
 main
 part2
 *.db
-bh_a4/build/
+build/
