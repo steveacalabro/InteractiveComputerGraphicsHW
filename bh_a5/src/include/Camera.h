@@ -18,8 +18,7 @@ private:
 public:
 	mat4 projViewMatrix = Angel::identity();
 
-	void LookAt(const vec4& eye, const vec4& at, const vec4& up) {
-		this->viewMatrix = Angel::LookAt(eye, at, up);
+	void LookAt(const vec4& eye, const vec4& at, const vec4& up) {		
 		this->position = eye;
 		this->target = at;
 		this->up = up;
@@ -60,7 +59,13 @@ public:
 
 	}
 
+	void translate(const float x, const float y, const float z) {		
+		vec4 translationVector = vec4(x, y, z, 0);
+		this->position += translationVector;
+	}
+
 	void updateMatrix() {
+		this->viewMatrix = Angel::LookAt(this->position, this->target, this->up);
 		projViewMatrix = projMatrix * viewMatrix;
 	}
 
