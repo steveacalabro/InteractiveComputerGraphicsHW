@@ -473,12 +473,20 @@ void initModel(){
 	}
 
 	int meshLength = mesh.size();
-	/*point3* points = new point3[meshLength];
-	vec3* normals = new vec3[meshLength];*/
+	int numVertPerTriangle = 3;
 
-	point3 points[NUM_FACES*3];
-	vec3 normals[NUM_FACES *3];
-	point3 centerOfMass[NUM_FACES * 3];
+	int vertArrayLength = numVertPerTriangle * meshLength;
+	point3* points = new point3[vertArrayLength];
+	vec3* normals = new vec3[vertArrayLength];
+	point3* centerOfMass = new point3[vertArrayLength];
+
+	int sizePoints = vertArrayLength*sizeof(points[0]);
+	int sizeNormals = vertArrayLength*sizeof(normals[0]);
+	int sizeCenterOfMass = vertArrayLength* sizeof(centerOfMass[0]);
+
+	//point3 points[NUM_FACES*3];
+	//vec3 normals[NUM_FACES *3];
+	//point3 centerOfMass[NUM_FACES * 3];
 
 	for (int i = 0; i < meshLength; i++) {
 
@@ -503,10 +511,10 @@ void initModel(){
 	GLuint buffer;
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points) + sizeof(normals) + sizeof(centerOfMass), NULL, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0,	sizeof(points), points);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points), sizeof(normals), normals);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points) + sizeof(normals), sizeof(centerOfMass), centerOfMass);
+	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass, NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizePoints, points);
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints, sizeNormals, normals);
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints+sizeNormals, sizeCenterOfMass, centerOfMass);
 
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 	glUseProgram(program);
@@ -518,11 +526,11 @@ void initModel(){
 
 	GLuint aNormal = glGetAttribLocation(program, "aNormal");
 	glEnableVertexAttribArray(aNormal);
-	glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(points)));
+	glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints));
 
 	GLuint aCenterOfMass = glGetAttribLocation(program, "aCenterOfMass");
 	glEnableVertexAttribArray(aCenterOfMass);
-	glVertexAttribPointer(aCenterOfMass, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(points) + sizeof(normals)));
+	glVertexAttribPointer(aCenterOfMass, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
