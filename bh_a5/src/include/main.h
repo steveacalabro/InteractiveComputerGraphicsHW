@@ -68,6 +68,7 @@ void assignGlutFunctions(void(*display)(), void(*keyboad)(unsigned char, int, in
 
 int createOpenGLContext(const char* windowName, const int x, const int y, const int w, const int h);
 void initCamera(Camera &camera, bool usePerspective);
+void setCamProjection(Camera &camera, int option);
 void initScene();
 
 int loadSFM(char* fileName, Mesh &mesh);
