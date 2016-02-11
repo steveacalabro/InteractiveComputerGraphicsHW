@@ -4,7 +4,9 @@ OPTIONS=$(GCC_OPTIONS) $(GL_OPTIONS)
 
 all:
 	g++ -c -I ./include InitShader.cpp
-	g++  main.cpp InitShader.o $(OPTIONS) -o main
+	g++ -c -I ./include Plane.cpp $(OPTIONS)
+	g++ -c -I ./include loadSMF.cpp $(OPTIONS)
+	g++  main.cpp InitShader.o Plane.o loadSMF.o $(OPTIONS) -o main
 run:
 	./main
 clean:
