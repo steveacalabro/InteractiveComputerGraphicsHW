@@ -1,21 +1,22 @@
-CS537 Homework Assignment 4: 3D Transformations and Geometry in OGL
+CS537 Homework Assignment 5: Viewing, Projection and Flat-Shading
 Author: Bingyao Huang
-Date: 02/03/2016
+Date: 02/10/2016
 Language: C++
 
 
-This code creates an OpenGL program that displays a colored cube. The user can transform the cube via key input. 
 
-1. Enable the depth test to ensure proper display. 
+This code loads a triangle mesh model from an smf file and view the model in 3 different projection modes (perspective, orthographic and parallel). Two fixed white point light sources are palced in the scene. A diffuse (Lambertian) color for the triangle is computed and assigned to its three vertices. This will implement flat shading.
 
-2. A right click menu is created to defines the transformation to be modified. (SCALE, ROTATE, TRANSLATE). The transformations are applied in the order of scale, rotation, then translation.
 
-3. Use 'A', 'D', 'W', 'S', 'Q', 'E' for increasing and decreasing the X,Y,Z components of the current transformation.
+A rotating camera view of the model is displayed. The camera rotates on a cylinder around the model. Allow the user to interactively change the height, the orbit radius and speed of the camera. The camera rotates around and look at the smf model (i.e. your LookAt point stays constant). 
 
-4. Use 'Z', 'X' for increasing and decreasing the delta added to the transformations.
-
-5. Press 'R' to reset the transformations
-
+***************************** Instructions *********************************** 
+1. Press 'W', 'S' for increasing and decreasing the camera's Y position
+2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus
+3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed
+4. Press 'SPACE' to pause/resume animation
+5. Use mouse right click to change camera's projection mode
+5. Press 'ESC' to exit program
 
 Contents:
 	source files: src\*.cpp

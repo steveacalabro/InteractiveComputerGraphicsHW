@@ -20,19 +20,28 @@ int mainWindow;
 enum class VBO_OPTION{ VERTEX, COLOR };
 
 // for right click menu
-bool onScale{ false }, onRotate{ false }, onTranslate{ true };
+bool onPerspective{ true };
 
 // mode, camera and scene class
 BoxGeometry ColorCube;
 Camera camera;
 Scene scene;
 
+const int NUM_FACES{1000};
 Mesh mesh;
 
 const int NumVertices = 36;
 color4 colors[NumVertices];
 point4 points[NumVertices];
 
+
+double camRadius{ 6.0 }, camY{ 0.0 };
+double speed{ 0.1 };
+double t{ 0.0 }, dt{ 0.01 };
+//double angle{ 0.0 };
+bool stopAnimation = false;
+
+enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
 // quad generates two triangles for each face and assigns colors
 // to the vertices
 int Index = 0;
@@ -229,7 +238,21 @@ void initShaderProgram(void)
 void render() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	double angle = t * speed;
+	double rotationCenterX = 0.0;
+	double rotationCenterZ = 0.0;
 
+	double camX = rotationCenterX + camRadius*cos(DegreesToRadians * 90 + angle);
+	double camZ = rotationCenterZ + camRadius*sin(DegreesToRadians * 90 + angle);
+	vec4 camPos = vec4(camX, camY, camZ, 1.0);
+	vec4 camTarget = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 camUp = vec4(0.0, 1.0, 0.0, 0.0);
+
+	camera.LookAt(camPos, camTarget, camUp);
+
+
+	// update MVP
 	camera.updateMatrix();
 	ColorCube.updateMatrix();
 	scene.updateMatrix();
@@ -270,21 +293,16 @@ void animationMenu(int option)
 {
 	switch (option)
 	{
-	case 0:
-		onScale = true;
-		onRotate = false;
-		onTranslate = false;
-		break;
-	case 1:
-		onScale = false;
-		onRotate = true;
-		onTranslate = false;
+	case PERSPECTIVE://perspective
+		setCamProjection(camera, PERSPECTIVE);
 		break;
 
-	case 2:
-		onScale = false;
-		onRotate = false;
-		onTranslate = true;
+	case ORTHOGRAPHIC:
+		setCamProjection(camera, ORTHOGRAPHIC);
+		break;
+
+	case PARALLEL: //parallel
+		setCamProjection(camera, PARALLEL);
 		break;
 	}
 
@@ -297,9 +315,10 @@ void createAnimationMenus() {
 	// create a parent menu
 	menu = glutCreateMenu(animationMenu);
 	// add entries to parent menu
-	glutAddMenuEntry("Scale", 0);
-	glutAddMenuEntry("Rotate", 1);
-	glutAddMenuEntry("Translate", 2);
+	glutAddMenuEntry("Perspective", PERSPECTIVE);
+	glutAddMenuEntry("Orthographic", ORTHOGRAPHIC);
+	glutAddMenuEntry("Parallel ", PARALLEL);
+
 
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
@@ -311,47 +330,39 @@ void resetTransformation() {
 
 void myKeyboard(unsigned char key, int x, int y)
 {
-	double camRadius{ 0.0 }, camHeight{ 0.0 }, TZ{ 0.0 };
-	static double delta{ 0.5 };
+	double delta = 0.1;
+	
 	switch (key) {
 		// translate X
-	case 'd':case 'D': camRadius = delta; break;
-	case 'a':case 'A': camRadius = -delta; break;
-
+	case 'd':case 'D': camRadius += delta; 
+		fprintf(stdout, "Camera rotaion radius increased, now is %2f\n", camRadius); break;
+	case 'a':case 'A': 
+		if (camRadius > 1.0)
+		{
+			camRadius -= delta;
+			fprintf(stdout, "Camera rotaion radius decreased, now is %2f\n", camRadius); break;
+		}
+		else {
+			fprintf(stdout, "Minimum Camera rotaion radius reached, press 'D' to increase radius\n"); break;
+		}
+		
 		// translate Y
-	case 'w':case 'W': camHeight = delta; break;
-	case 's':case 'S': camHeight = -delta; break;
-
+	case 'w':case 'W': camY += delta; 
+		fprintf(stdout, "Camera Y position increased, now is %2f\n", camY); break;
+	case 's':case 'S': camY -= delta; 
+		fprintf(stdout, "Camera Y position decreased, now is %2f\n", camY); break;
 		// translate Z		
-	case 'e': case 'E': TZ = delta; break;
-	case 'q': case 'Q': TZ = -delta; break;
+	case 'e': case 'E': speed += 0.1; 
+		fprintf(stdout, "Camera rotation speed increased, now is %2f\n", speed); break;
+	case 'q': case 'Q': speed -= 0.1; 
+		fprintf(stdout, "Camera rotation speed decreased, now is %2f\n", speed); break;
 
-		// reset transformations
-	case 'R': case 'r': resetTransformation(); fprintf(stdout, "Transformations reseted\n"); break;
+	//	// reset transformations
+	//case 'R': case 'r': resetTransformation(); fprintf(stdout, "Transformations reseted\n"); break;
 
-		// decrease delta
-	case 'z': case 'Z':
-		if (delta > 0.0)
-		{
-			delta -= 0.01;
-		}
-		else if (delta < 0.0)
-		{
-			delta = 0.0;
-			fprintf(stdout, "Press 'X' to increase delta!\n");
-		}
+		// stop animation
+	case ' ': stopAnimation = !stopAnimation; break;
 
-		fprintf(stdout, "delta = %.2f\n", delta);
-		break;
-
-		// increase delta
-	case 'x': case 'X': delta += 0.01;
-		if (delta > 0.9)
-		{
-			delta = 0.9;
-			fprintf(stdout, "Press 'Z' to decrease delta!\n");
-		}
-		fprintf(stdout, "delta = %.2f\n", delta); break;
 
 		// exit program
 	case 033:
@@ -360,27 +371,6 @@ void myKeyboard(unsigned char key, int x, int y)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (camRadius != 0.0 || camHeight != 0.0 || TZ != 0.0)
-	{
-
-		//if (onScale) {
-			double sx{ 1 + camRadius }, sy{ 1 + camHeight }, sz{ 1 + TZ };
-			
-			fprintf(stdout, "scale color cube by : (%.2f, %.2f, %.2f)\n", sx, sy, sz);
-		//}
-		//else if (onRotate) {
-			ColorCube.rotate(camRadius, camHeight, TZ);
-			fprintf(stdout, "rotate color cube by : (%.2f, %.2f, %.2f)\n", camRadius, camHeight, TZ);
-		//}
-		//else if (onTranslate) {
-			ColorCube.translate(camRadius, camHeight, TZ);
-			fprintf(stdout, "translate color cube by : (%.2f, %.2f, %.2f)\n", camRadius, camHeight, TZ);
-			//ColorCube.translationMatrix[0][3] += TX;
-			//ColorCube.translationMatrix[1][3] += TY;
-			//ColorCube.translationMatrix[2][3] += TZ;
-		//}
-			camera.translate(0.0, camHeight, 0.0);
-	}
 
 
 	glutPostRedisplay();
@@ -394,7 +384,15 @@ void myReshape(int w, int h) {
 
 //----------------------------------------------------------------------------
 
+void myIdle() {
+	/* change something over time*/
+	if (!stopAnimation) {
+		t += dt;
+		//angle = t * speed;
+	}
 
+	glutPostWindowRedisplay(mainWindow);
+}
 
 void assignGlutFunctions(void(*display)(), void(*keyboad)(unsigned char, int, int), void(*mouse)(int, int, int, int),
 	void(*reshape)(int, int), void(*timer)(int), void(*idle)(), void(*menuFunc)())
@@ -461,8 +459,8 @@ int createOpenGLContext(const char* windowName, const int x, const int y, const 
 void initModel(){
 
 	#ifdef __linux__ 
-		Mesh mesh;
-		int ifSuccess = loadSFM("./resources/dragon-50000.smf", mesh);
+		char* filePath = "./resources/dragon-50000.smf";
+		int ifSuccess = loadSFM(filePath, mesh);
 	#elif _WIN32
 		
 		char* filePath = "..\\src\\resources\\dragon-50000.smf";
@@ -478,9 +476,9 @@ void initModel(){
 	/*point3* points = new point3[meshLength];
 	vec3* normals = new vec3[meshLength];*/
 
-	point3 points[48*3];
-	vec3 normals[48*3];
-	point3 centerOfMass[48 * 3];
+	point3 points[NUM_FACES*3];
+	vec3 normals[NUM_FACES *3];
+	point3 centerOfMass[NUM_FACES * 3];
 
 	for (int i = 0; i < meshLength; i++) {
 
@@ -526,13 +524,11 @@ void initModel(){
 	glEnableVertexAttribArray(aCenterOfMass);
 	glVertexAttribPointer(aCenterOfMass, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(points) + sizeof(normals)));
 
-	
-
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 }
 
-void initCamera(Camera &camera, bool usePerspective)
+void initCamera(Camera &camera, int option)
 {
 	// init camera view matrix
 	vec3 cameraPosition = vec3(0.0, 0.0, 10.0);
@@ -540,28 +536,63 @@ void initCamera(Camera &camera, bool usePerspective)
 	vec3 cameraUp = vec3(0.0, 1.0, 0.0);
 	camera.LookAt(cameraPosition, cameraTarget, cameraUp);
 
+	setCamProjection(camera, option);
+}
+
+
+void setCamProjection(Camera &camera, int option) {
 	// init camera projection matrix	
-	if (usePerspective)
-	{
-		// perspective projection
-		double fovy{ 50.0 }, aspect{ 1.0 }, zNear{ 1.0 }, zFar{ 10.0 };
+	switch (option){
+		case PERSPECTIVE:
+			// perspective projection
+		{double fovy{ 50.0 }, aspect{ 1.0 }, zNear{ 1.0 }, zFar{ 10.0 };
 		camera.Perspective(fovy, aspect, zNear, zFar);
-	}
-	else
-	{
-		// orthographic projection
-		double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
+		fprintf(stdout, " Set camera to perspective mode \n");
+		break;
+		}
+
+		case ORTHOGRAPHIC:
+			// orthographic projection
+		{double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
 		camera.Ortho(left, right, bottom, top, zNear, zFar);
+		fprintf(stdout, " Set camera to orthographic mode \n");
+		break; }
+
+
+		// parallel projection
+		case PARALLEL:			
+		{
+			double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
+			camera.Ortho(left, right, bottom, top, zNear, zFar);
+
+			mat4 shearMatrix = Angel::identity();
+			double theta{ 85 };
+			double phi{ 95 };
+			shearMatrix[0][2] = -1 / tan(DegreesToRadians * theta);
+			//shearMatrix[0][2] = 0;
+			shearMatrix[1][2] = -1 / tan(DegreesToRadians * phi);
+			//shearMatrix[1][2] = 0;
+
+			camera.projMatrix = camera.projMatrix*shearMatrix;
+			fprintf(stdout, " Set camera to parallel mode \n");
+			break; 
+		}
 
 	}
+	
+		
+
 }
 
 void printInstructions()
 {
 	fprintf(stdout, "***************************** Instructions *********************************** \n");
-	fprintf(stdout, "1. Use 'A', 'D', 'W', 'S', 'Q', 'E' for increasing and decreasing the X,Y,Z components of the current transformation \n");
-	fprintf(stdout, "2. Use 'Z', 'X' for increasing and decreasing the delta added to the transformations \n");
-	fprintf(stdout, "3. Press 'R' to reset the transformations \n");
+	fprintf(stdout, "1. Press 'W', 'S' for increasing and decreasing the camera's Y position \n");
+	fprintf(stdout, "2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n");
+	fprintf(stdout, "3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n");
+	fprintf(stdout, "4. Press 'SPACE' to pause/resume animation \n");
+	fprintf(stdout, "5. Use mouse right click to change camera's projection mode \n");
+	fprintf(stdout, "5. Press 'ESC' to exit program \n");
 
 }
 
@@ -572,7 +603,7 @@ void initScene() {
 
 
 	initModel();
-	initCamera(camera, true);
+	initCamera(camera, PERSPECTIVE);
 	// init color cube
 	//initColorCube();
 	//ColorCube.init(program);
@@ -588,10 +619,10 @@ int main(int argc, char **argv)
 	glFrontFace(GL_CCW);
 
 	///********* main window  ****************/ 
-	mainWindow = createOpenGLContext("ICG HW4 - Color Cube", 200, 0, 500, 500);
+	mainWindow = createOpenGLContext("ICG HW5 - Viewing, Projection and Flat-Shading", 200, 0, 500, 500);
 
 	glEnable(GL_DEPTH_TEST); //! Depth test must be enabled after the glewInit(), or it doesn't work
-	assignGlutFunctions(displayMainWindow, myKeyboard, nullptr, nullptr, nullptr, nullptr, createAnimationMenus);
+	assignGlutFunctions(displayMainWindow, myKeyboard, nullptr, nullptr, nullptr, myIdle, createAnimationMenus);
 	initScene();
 
 	glutMainLoop();

@@ -20,13 +20,13 @@ void main()
 	vec4 normal = u_MVP * vec4(aNormal, 0.0); // remember to transform normal too
 
 	Light light0, light1;
-	light0.position = vec4(-0.5, 2.0, 0.0, 1.0);
-	light0.intensity = vec4(0.1, 0.5, 0.3, 1.0);
+	light0.position = vec4(-0.5, 2.0, 1.0, 1.0);
+	light0.intensity = vec4(0.2, 0.5, 0.3, 1.0);
 	light0.kd = 0.8;
 
-	light1.position = vec4(0.5, 0.8, 0.0, 1.0);
+	light1.position = vec4(0.5, 3.8, 3.0, 1.0);
 	light1.intensity = vec4(0.6, 0.1, 0.3, 1.0);
-	light1.kd = 0.4;
+	light1.kd = 0.9;
 
 	// per vertex shading
 	//vec4 color1 = light0.intensity * light0.kd * clamp(dot(light0.position - vec4(aPosition, 1.0), normal), 0.0, 1.0);
