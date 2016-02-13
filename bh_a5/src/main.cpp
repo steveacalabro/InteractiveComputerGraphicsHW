@@ -476,6 +476,8 @@ void initModel(){
 	int numVertPerTriangle = 3;
 
 	int vertArrayLength = numVertPerTriangle * meshLength;
+
+	// dynamic array
 	point3* points = new point3[vertArrayLength];
 	vec3* normals = new vec3[vertArrayLength];
 	point3* centerOfMass = new point3[vertArrayLength];
@@ -484,9 +486,6 @@ void initModel(){
 	int sizeNormals = vertArrayLength*sizeof(normals[0]);
 	int sizeCenterOfMass = vertArrayLength* sizeof(centerOfMass[0]);
 
-	//point3 points[NUM_FACES*3];
-	//vec3 normals[NUM_FACES *3];
-	//point3 centerOfMass[NUM_FACES * 3];
 
 	for (int i = 0; i < meshLength; i++) {
 
