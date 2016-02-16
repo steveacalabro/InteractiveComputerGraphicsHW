@@ -1,0 +1,35 @@
+CS537 Homework Assignment 5: Viewing, Projection and Flat-Shading
+Author: Bingyao Huang
+Date: 02/10/2016
+Language: C++
+
+
+
+This code loads a triangle mesh model from an smf file and view the model in 3 different projection modes (perspective, orthographic and parallel). Two fixed white point light sources are palced in the scene. A diffuse (Lambertian) color for the triangle is computed and assigned to its three vertices. This will implement flat shading.
+
+
+A rotating camera view of the model is displayed. The camera rotates on a cylinder around the model. Allow the user to interactively change the height, the orbit radius and speed of the camera. The camera rotates around and look at the smf model (i.e. your LookAt point stays constant). 
+
+***************************** Instructions *********************************** 
+1. Press 'W', 'S' for increasing and decreasing the camera's Y position
+2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus
+3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed
+4. Press 'SPACE' to pause/resume animation
+5. Use mouse right click to change camera's projection mode
+5. Press 'ESC' to exit program
+
+Contents:
+	source files: src\*.cpp
+	makefile: Makefile
+	library folder: include
+	
+
+Usage:	
+	make: the default target compiles all the code
+	make run: executes the program(s)
+	make clean: deletes all the object files and executable files.
+	
+	
+
+	
+
