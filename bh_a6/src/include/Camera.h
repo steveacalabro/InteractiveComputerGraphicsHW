@@ -9,7 +9,7 @@ private:
 	vec4 target = vec4();
 	vec4 up = vec4();
 
-	mat4 viewMatrix = Angel::identity();
+	/*mat4 viewMatrix = Angel::identity();*/
 	
 	/*mat4 projViewMatrix = Angel::identity();*/
 
@@ -17,6 +17,7 @@ private:
 
 public:
 	mat4 projMatrix = Angel::identity();
+	mat4 viewMatrix = Angel::identity();
 	mat4 projViewMatrix = Angel::identity();
 
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up) {		
