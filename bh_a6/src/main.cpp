@@ -38,11 +38,19 @@ point4 points[NumVertices];
 
 double camRadius{ 6.0 }, camY{ 0.0 };
 double speed{ 0.1 };
+
+double lightRadius{ 6.0 }, lightHeight{ 0.0 }, lightAngle{ 0.0 };
+
+int materialOption{ 0 };
+int shaderOption{ 0 };
+
 double t{ 0.0 }, dt{ 0.01 };
 //double angle{ 0.0 };
 bool stopAnimation = false;
 
 enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
+enum {METAL, PLASTIC, GOLD };
+enum { GOURAUD, PHONG};
 // quad generates two triangles for each face and assigns colors
 // to the vertices
 
@@ -241,6 +249,8 @@ void render() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
+
+	// update camera rotation and height
 	double angle = t * speed;
 	double rotationCenterX = 0.0;
 	double rotationCenterZ = 0.0;
@@ -252,6 +262,10 @@ void render() {
 	vec4 camUp = vec4(0.0, 1.0, 0.0, 0.0);
 
 	camera.LookAt(camPos, camTarget, camUp);
+
+	// update light rotation and height
+	double lightX = rotationCenterX + lightRadius*cos(DegreesToRadians * lightAngle);
+	double lightZ = rotationCenterZ + lightRadius*sin(DegreesToRadians * lightAngle);
 
 
 	// update MVP
@@ -265,10 +279,25 @@ void render() {
 	GLuint u_MVP = glGetUniformLocation(program, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
-	// sned model view matrix to shader
+	// send model view matrix to shader
 	mat4 MV = camera.viewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
 	GLuint u_MV = glGetUniformLocation(program, "u_MV");
 	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
+
+
+	// send light position to shader
+	vec4 lightPos = vec4(lightX, lightHeight, lightZ, 1.0);
+	GLuint u_lightPos = glGetUniformLocation(program, "u_lightPos");
+	glUniform4fv(u_lightPos, 1, lightPos); // mat.h is row major, so use GL_TRUE to transpsoe t
+
+
+	// send material option to shader
+	GLuint u_material = glGetUniformLocation(program, "u_material");
+	glUniform1i(u_material, materialOption); 
+
+	// send shader option to shader
+	GLuint u_shadingModel = glGetUniformLocation(program, "u_shadingModel");
+	glUniform1i(u_shadingModel, shaderOption);
 
 	// bind vertex array object
 	//glBindVertexArray(ColorCube.vao.id);
@@ -296,7 +325,7 @@ void displayMainWindow(void)
 
 
 
-void animationMenu(int option)
+void projectionMenu(int option)
 {
 	switch (option)
 	{
@@ -316,17 +345,80 @@ void animationMenu(int option)
 	glutPostRedisplay();
 }
 
-void createAnimationMenus() {
-	GLuint menu;
 
-	// create a parent menu
-	menu = glutCreateMenu(animationMenu);
-	// add entries to parent menu
+void materialMenue(int option)
+{
+	switch (option)
+	{
+	case METAL://perspective
+		materialOption = METAL;
+		break;
+
+	case PLASTIC:
+		materialOption = PLASTIC;
+		break;
+
+	case GOLD: //parallel
+		materialOption = GOLD;
+		break;
+	}
+
+	glutPostRedisplay();
+}
+
+void shadingMenu(int option)
+{
+	switch (option)
+	{
+	case GOURAUD://perspective
+		shaderOption = GOURAUD;
+		break;
+
+	case PHONG:
+		shaderOption = PHONG;
+		break;
+	}
+
+	glutPostRedisplay();
+}
+
+void parentMenu(int option)
+{
+	glutPostRedisplay();
+}
+
+void createAnimationMenus() {
+	GLuint menu, projectionSubMenu, materialSubMenue, shadingSubMenue;
+
+
+	// projection mode
+	projectionSubMenu = glutCreateMenu(projectionMenu);
 	glutAddMenuEntry("Perspective", PERSPECTIVE);
 	glutAddMenuEntry("Orthographic", ORTHOGRAPHIC);
 	glutAddMenuEntry("Parallel ", PARALLEL);
 
 
+	// material
+	materialSubMenue = glutCreateMenu(materialMenue);
+	glutAddMenuEntry("Metal", METAL);
+	glutAddMenuEntry("Plastic", PLASTIC);
+	glutAddMenuEntry("Gold ", GOLD);
+
+
+	// shading model
+	shadingSubMenue = glutCreateMenu(shadingMenu);
+	glutAddMenuEntry("Gouraud", GOURAUD);
+	glutAddMenuEntry("Phong", PHONG);
+
+	
+
+	// create a parent menu
+	menu = glutCreateMenu(parentMenu);
+	glutAddSubMenu("Projection Mode", projectionSubMenu);
+	glutAddSubMenu("Shading Model", shadingSubMenue);
+	glutAddSubMenu("Material", materialSubMenue);
+	// add entries to parent menu
+	
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -337,10 +429,10 @@ void resetTransformation() {
 
 void myKeyboard(unsigned char key, int x, int y)
 {
-	double delta = 0.1;
+	double delta = 0.1; double theta = 10.0;
 	
 	switch (key) {
-		// translate X
+		// camera radius
 	case 'd':case 'D': camRadius += delta; 
 		fprintf(stdout, "Camera rotaion radius increased, now is %2f\n", camRadius); break;
 	case 'a':case 'A': 
@@ -353,16 +445,46 @@ void myKeyboard(unsigned char key, int x, int y)
 			fprintf(stdout, "Minimum Camera rotaion radius reached, press 'D' to increase radius\n"); break;
 		}
 		
-		// translate Y
+		// camera height
 	case 'w':case 'W': camY += delta; 
 		fprintf(stdout, "Camera Y position increased, now is %2f\n", camY); break;
 	case 's':case 'S': camY -= delta; 
 		fprintf(stdout, "Camera Y position decreased, now is %2f\n", camY); break;
-		// translate Z		
+
+
+		// rotation speed	
 	case 'e': case 'E': speed += 0.1; 
 		fprintf(stdout, "Camera rotation speed increased, now is %2f\n", speed); break;
 	case 'q': case 'Q': speed -= 0.1; 
 		fprintf(stdout, "Camera rotation speed decreased, now is %2f\n", speed); break;
+
+
+		// light radius
+	case 'z':case 'Z': lightRadius += delta;
+		fprintf(stdout, "Camera rotaion radius increased, now is %2f\n", lightRadius); break;
+	case 'x':case 'X':
+		if (lightRadius > 1.2)
+		{
+			lightRadius -= delta;
+			fprintf(stdout, "Light rotaion radius decreased, now is %2f\n", lightRadius); break;
+		}
+		else {
+			fprintf(stdout, "Minimum light rotaion radius reached, press 'D' to increase radius\n"); break;
+		}
+
+
+		// light height
+	case 'c':case 'C': lightHeight += delta;
+		fprintf(stdout, "Light Y position increased, now is %2f\n", lightHeight); break;
+	case 'v':case 'V': lightHeight -= delta;
+		fprintf(stdout, "Light Y position decreased, now is %2f\n", lightHeight); break;
+
+		// light angle
+	case 'b':case 'B': lightAngle += theta;
+		fprintf(stdout, "Light angle increased, now is %2f\n", lightAngle); break;
+	case 'n':case 'N': lightAngle -= theta;
+		fprintf(stdout, "Light angle decreased, now is %2f\n", lightAngle); break;
+
 
 	//	// reset transformations
 	//case 'R': case 'r': resetTransformation(); fprintf(stdout, "Transformations reseted\n"); break;

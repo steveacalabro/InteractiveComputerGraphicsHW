@@ -6,6 +6,10 @@ varying vec4 vColor;
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
 
+uniform vec4 u_lightPos;
+uniform int u_material;
+uniform int u_shadingModel;
+
 // defined in view space
 struct Vertex{
 	vec4 position;
@@ -37,7 +41,7 @@ vec4 GouraudColor(Light light, Material material, Vertex vertex);
 
 void main()
 {
-	gl_Position = u_MVP * vec4(aPosition,1.0);
+	gl_Position = u_MVP * vec4(aPosition, 1.0);
 	vec4 normalProjectionSpace = u_MVP * vec4(aNormal, 0.0); // remember to transform normal too
 
 	// coord and normal in view space
@@ -53,7 +57,9 @@ void main()
 	Light light0, light1;
 
 	// light0 is in world space
-	light0.position = u_MV*vec4(-0.5, 2.0, 1.0, 1.0); // transforms to view space
+	//light0.position = u_MV*vec4(-0.5, 2.0, 1.0, 1.0); // transforms to view space
+	light0.position = u_MV*u_lightPos; // transforms to view space
+
 	//light0.diffuse = vec4(0.2, 0.9, 0.3, 1.0);
 	//light0.specular = vec4(0.2, 0.9, 0.3, 1.0);
 	//light0.ambient = vec4(0.2, 0.9, 0.3, 1.0);
@@ -68,7 +74,7 @@ void main()
 	light1.specular = vec4(0.7, 0.5, 0.6, 1.0);
 	light1.ambient = vec4(0.7, 0.5, 0.6, 1.0);
 
-	Material metal, plastic, gold;
+	Material metal, plastic, gold, material;
 	// metal material
 	metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
 	metal.ks = vec4(1.0, 1.0, 1.0, 1.0);
@@ -87,9 +93,19 @@ void main()
 	gold.ka = vec4(0.1, 0.1, 0.1, 1.0);
 	gold.shininess = 50.0;
 
+
+
+	switch (u_material)
+	{
+		case 0: material = metal;break;
+		case 1: material = plastic;break;
+		case 2: material = gold;break;
+
+	}
+
 	// Gouraud shading
-	vec4 color0 = GouraudColor(light0, metal, vertex);
-	vec4 color1 = GouraudColor(light1, metal, vertex);
+	vec4 color0 = GouraudColor(light0, material, vertex);
+	vec4 color1 = GouraudColor(light1, material, vertex);
 
 	vColor = clamp(color1 + color0, 0.0, 1.0);
 

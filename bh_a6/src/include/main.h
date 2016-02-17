@@ -60,7 +60,7 @@ void initShaderProgram(void);
 void render();
 void displayMainWindow(void);
 
-void animationMenu(int option);
+void projectionMenu(int option);
 void createAnimationMenus();
 void resetTransformation();
 void myKeyboard(unsigned char key, int x, int y);
