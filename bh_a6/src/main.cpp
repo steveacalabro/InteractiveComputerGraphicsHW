@@ -261,9 +261,14 @@ void render() {
 
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
 
-	// send model view projection maatrix to shader
+	// send model view projection matrix to shader
 	GLuint u_MVP = glGetUniformLocation(program, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
+
+	// sned model view matrix to shader
+	mat4 MV = camera.viewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
+	GLuint u_MV = glGetUniformLocation(program, "u_MV");
+	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 	// bind vertex array object
 	//glBindVertexArray(ColorCube.vao.id);
@@ -339,7 +344,7 @@ void myKeyboard(unsigned char key, int x, int y)
 	case 'd':case 'D': camRadius += delta; 
 		fprintf(stdout, "Camera rotaion radius increased, now is %2f\n", camRadius); break;
 	case 'a':case 'A': 
-		if (camRadius > 1.0)
+		if (camRadius > 1.2)
 		{
 			camRadius -= delta;
 			fprintf(stdout, "Camera rotaion radius decreased, now is %2f\n", camRadius); break;
@@ -542,6 +547,13 @@ void initModel(){
 	glVertexAttribPointer(aCenterOfMass, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+	// delete dynamic array pointers
+	delete[] points;
+	delete[] normals;
+	delete[] centerOfMass;
+
 
 }
 
