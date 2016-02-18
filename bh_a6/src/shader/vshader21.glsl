@@ -1,14 +1,14 @@
+#version 330
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aCenterOfMass;
 
-varying vec4 vColor;
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
 
 uniform vec4 u_lightPos;
 uniform int u_material;
-uniform int u_shadingModel;
+
 
 // defined in view space
 struct Vertex{
@@ -33,6 +33,13 @@ struct Material{
 	vec4 ka;
 	float shininess;
 };
+
+
+varying vec4 vLightDir[2];
+varying vec4 vNormal;
+varying vec4 vViewDir;
+varying int v_material;
+varying vec4 vColor;
 
 vec4 ambientColor(Light light, Material material);
 vec4 diffuseColor(Light light, Material material, Vertex vertex);
@@ -108,6 +115,18 @@ void main()
 	vec4 color1 = GouraudColor(light1, material, vertex);
 
 	vColor = clamp(color1 + color0, 0.0, 1.0);
+
+
+
+	// for Phong shading
+	v_material = u_material;
+	vLightDir[0] = light0.position - vertex.position;
+	vLightDir[1] = light1.position - vertex.position;
+	vNormal = vertex.normal;
+
+	vec4 cameraPos = vec4(0.0); // note this is in view space
+	vViewDir = cameraPos - vertex.position;
+
 
 }
 
