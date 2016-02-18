@@ -1,4 +1,4 @@
-#version 330
+#version 120
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aCenterOfMass;
@@ -38,7 +38,6 @@ struct Material{
 varying vec4 vLightDir[2];
 varying vec4 vNormal;
 varying vec4 vViewDir;
-varying int v_material;
 varying vec4 vColor;
 
 vec4 ambientColor(Light light, Material material);
@@ -57,7 +56,7 @@ void main()
 
 	Vertex vertex;
 	vertex.position = positionViewSpace;
-	vertex.normal = normalViewSpace;
+	vertex.normal = vec4(normalize(normalViewSpace).xyz, 0.0);
 
 
 
@@ -76,7 +75,7 @@ void main()
 	light0.ambient = vec4(0.8, 0.8, 0.8, 1.0);
 
 	// light1 is in view space
-	light1.position = vec4(0.0, 1.0, -2.0, 1.0);
+	light1.position = vec4(0.0, 1.0, 2.0, 1.0);
 	light1.diffuse = vec4(0.7, 0.5, 0.6, 1.0);
 	light1.specular = vec4(0.7, 0.5, 0.6, 1.0);
 	light1.ambient = vec4(0.7, 0.5, 0.6, 1.0);
@@ -101,13 +100,22 @@ void main()
 	gold.shininess = 50.0;
 
 
+	// GLSL 120 does not support switch
+	//switch (u_material)
+	//{
+	//	case 0: material = metal;break;
+	//	case 1: material = plastic;break;
+	//	case 2: material = gold;break;
 
-	switch (u_material)
-	{
-		case 0: material = metal;break;
-		case 1: material = plastic;break;
-		case 2: material = gold;break;
-
+	//}
+	if(u_material == 0){
+		material = metal;
+	}
+	else if(u_material == 1){
+		material = plastic;
+	}
+	else{
+		material = gold;
 	}
 
 	// Gouraud shading
@@ -119,12 +127,12 @@ void main()
 
 
 	// for Phong shading
-	v_material = u_material;
+	//v_material = u_material;
 	vLightDir[0] = light0.position - vertex.position;
 	vLightDir[1] = light1.position - vertex.position;
 	vNormal = vertex.normal;
 
-	vec4 cameraPos = vec4(0.0); // note this is in view space
+	vec4 cameraPos = vec4(0.0, 0.0, 0.0, 1.0); // note this is in view space and w = 1.0 because it is a point
 	vViewDir = cameraPos - vertex.position;
 
 
@@ -141,7 +149,7 @@ vec4 ambientColor(Light light, Material material){
 
 vec4 diffuseColor(Light light, Material material, Vertex vertex){
 
-	vec4 lightDir = normalize(light.position - vertex.position);
+	vec4 lightDir = vec4(normalize((light.position - vertex.position).xyz), 0.0);
 	float lightDotNormal = dot(lightDir, vertex.normal);
 
 	// diffuse = Id * kd * cos(theta)
@@ -152,10 +160,13 @@ vec4 diffuseColor(Light light, Material material, Vertex vertex){
 
 // Blinn Phong specular
 vec4 specularColor(Light light, Material material, Vertex vertex){
-	vec4 lightDir = normalize(light.position - vertex.position);
-	vec4 cameraPos = vec4(0.0); // note this is in view space
-	vec4 viewDir = normalize(cameraPos - vertex.position);
-	vec4 halfVector = normalize( lightDir + viewDir );
+	vec4 lightDir = vec4(normalize((light.position - vertex.position).xyz), 0.0);
+	vec4 cameraPos = vec4(0.0, 0.0, 0.0, 1.0); // note this is in view space and w = 1.0 because it is a point
+	vec4 viewDir = vec4(normalize((cameraPos - vertex.position).xyz), 0.0);
+	
+	vec4 r = 2*(dot(lightDir, vertex.normal))*vertex.normal - lightDir;
+	vec4 halfVector = vec4(normalize((lightDir + viewDir).xyz), 0.0);
+	
 	vec4 specular = vec4(0.0);
 
 	// if self shadow, specular = 0.0
@@ -164,7 +175,8 @@ vec4 specularColor(Light light, Material material, Vertex vertex){
 	}
 	else{
 		// specular = Is * ks * cosPhi^alpha
-		float specularShine = pow(max(dot(vertex.normal, halfVector), 0.0), material.shininess);
+		float specularShine = pow(max(dot(vertex.normal, halfVector), 0.0), material.shininess); // Blinn Phong specular
+		specularShine = pow(max(dot(r, viewDir), 0.0), material.shininess); // Original Phong specular
 		specular = light.specular * material.ks * specularShine;
 	}
 	return specular;
