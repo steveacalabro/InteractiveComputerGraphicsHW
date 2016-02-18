@@ -352,14 +352,17 @@ void materialMenue(int option)
 	{
 	case METAL://perspective
 		materialOption = METAL;
+		fprintf(stdout, " Set material to metal\n");
 		break;
 
 	case PLASTIC:
 		materialOption = PLASTIC;
+		fprintf(stdout, " Set material to plastic\n");
 		break;
 
 	case GOLD: //parallel
 		materialOption = GOLD;
+		fprintf(stdout, " Set material to gold\n");
 		break;
 	}
 
@@ -372,10 +375,12 @@ void shadingMenu(int option)
 	{
 	case GOURAUD://perspective
 		shaderOption = GOURAUD;
+		fprintf(stdout, " Set shading model to Gouraud\n");
 		break;
 
 	case PHONG:
 		shaderOption = PHONG;
+		fprintf(stdout, " Set shading model to Phong\n");
 		break;
 	}
 
@@ -741,9 +746,14 @@ void printInstructions()
 	fprintf(stdout, "1. Press 'W', 'S' for increasing and decreasing the camera's Y position \n");
 	fprintf(stdout, "2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n");
 	fprintf(stdout, "3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n");
-	fprintf(stdout, "4. Press 'SPACE' to pause/resume animation \n");
-	fprintf(stdout, "5. Use mouse right click to change camera's projection mode \n");
-	fprintf(stdout, "5. Press 'ESC' to exit program \n");
+
+	fprintf(stdout, "4. Press 'Z', 'X' to increasing and decreasing the light's rotation raidus \n");
+	fprintf(stdout, "5. Press 'C', 'V' to increasing and decreasing the light's Y position \n");
+	fprintf(stdout, "6. Press 'B', 'N' to increasing and decreasing the light's rotation anglen \n");
+	fprintf(stdout, "7. Press 'SPACE' to pause/resume animationn \n");
+
+	fprintf(stdout, "8. Use mouse right click to change camera's projection mode, material and shading model\n");
+	fprintf(stdout, "9. Press 'ESC' to exit program \n");
 
 }
 
