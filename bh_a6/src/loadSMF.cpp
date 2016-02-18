@@ -15,7 +15,7 @@ void averageNormals(vector<point3> &vertices, vector<point3> &faces, vector<vec3
 	Plane plane;
 	vector<vec3> faceNormals;
 	for (int i = 0; i < faces.size(); i++) {
-		plane.set3Points(vertices[int(faces[i][0]) - 1], vertices[int(faces[i][2]) - 1], vertices[int(faces[i][1]) - 1]);
+		plane.set3Points(vertices[int(faces[i][0]) - 1], vertices[int(faces[i][1]) - 1], vertices[int(faces[i][2]) - 1]);
 		faceNormals.push_back(plane.normal);
 	}
 
