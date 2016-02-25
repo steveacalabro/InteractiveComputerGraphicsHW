@@ -175,13 +175,29 @@ int loadBezir(char* fileName, Mesh &mesh) {
 	}
 
 	int resolution = 10;
+	constructMesh(controlPoints, resolution, mesh);
+
+	return 1;
+}
+
+
+void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh) {
+	vector<vector<point3>> meshVerts;
+	vector<point3> vertices;
+	vector<vec3>   normals;
+	vector<point3> faces;
+
 	meshVerts = interpolateBezirPatch(controlPoints, resolution);
 
-	tessellate(meshVerts, mesh);
+	tessellate(meshVerts, vertices, faces, normals);
+
+	// export to smf file
+	string outputSMF = "..\\src\\resources\\bezierPatch.obj";
+	exportSMF(outputSMF, vertices, faces);
 
 
+	// calculate the average normals for shanding
 	averageNormals(vertices, faces, normals);
-
 
 	Plane temp;
 
@@ -210,7 +226,6 @@ int loadBezir(char* fileName, Mesh &mesh) {
 		mesh.push_back(facet);
 	}
 
-	return 1;
 }
 
 
@@ -275,20 +290,22 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 	
 }
 
-void tessellate(const vector<vector<point3>> patchPoints) {
-	vector<point3> vertices;
+void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals) {
+	//vector<point3> vertices;
 	//vector<vec3>   normals;
-	vector<point3> faces;
-	Triangle3D facet;
+	//vector<point3> faces;
+	//Triangle3D facet;
 
 	int uLength = patchPoints.size();
 	int vLength = patchPoints[0].size();
 	for (int u = 0; u < uLength; u++) {
 		for (int v = 0; v < vLength; v++) {
 			vertices.push_back(patchPoints[u][v]);
-			//normals.push_back(vec3(0.0));
+			normals.push_back(vec3(0.0));
 
 			if (u < uLength - 1 && v < vLength - 1) {
+				//! smf index starts from 1 instead of 0, so need to +1
+
 				// counter colock wise, east triangle
 				faces.push_back(point3(u*vLength + v + 1, (u + 1)*vLength + v + 1, (u + 1)*vLength + v + 1 + 1));
 
@@ -299,8 +316,7 @@ void tessellate(const vector<vector<point3>> patchPoints) {
 			
 		}
 	}
-	string outputSMF = "..\\src\\resources\\bezierPatch.obj";
-	exportSMF(outputSMF, vertices,faces);
+	
 }
 
 
