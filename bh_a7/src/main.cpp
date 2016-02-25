@@ -13,7 +13,7 @@ Program program;
 
 
 // global vertex array object
-GLuint vao;
+GLuint vao, axisVao;
 
 // main window id
 int mainWindow;
@@ -116,6 +116,48 @@ void initColorCube()
 	//thetaLoc = glGetUniformLocation(program, "theta");
 }
 
+void initAxis()
+{
+	double points[] = { 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, // x axis
+						0.0, 0.0, 0.0,  0.0, 1.0, 0.0, // y axis
+						0.0, 0.0, 0.0,  0.0, 0.0, 1.0, // z axis
+	};
+
+	double colors[] = { 1.0, 0.0, 0.0,  // x axis
+						0.0, 1.0, 0.0,  // y axis
+						0.0, 0.0, 1.0,  // z axis
+	};
+
+	// Create a vertex array object
+	glGenVertexArrays(1, &axisVao);
+	glBindVertexArray(axisVao);
+
+	// Create and initialize a buffer object
+	GLuint buffer;
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points) +
+		sizeof(colors), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0,
+		sizeof(points), points);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points),
+		sizeof(colors), colors);
+
+	glUseProgram(program.lineShader);
+
+	// set up vertex arrays
+	GLuint vPosition = glGetAttribLocation(program.lineShader, "vPosition");
+	glEnableVertexAttribArray(vPosition);
+	glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0,
+		BUFFER_OFFSET(0));
+	GLuint aColor = glGetAttribLocation(program.lineShader, "aColor");
+	glEnableVertexAttribArray(aColor);
+	glVertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 0,
+		BUFFER_OFFSET(sizeof(points)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+}
 
 
 template <typename T>
@@ -247,10 +289,9 @@ void initShaderProgram(void)
 
 
 //----------------------------------------------------------------------------
-void render() {
-
+void renderPolygon() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 
 	// update camera rotation and height
 	double angle = t * speed;
@@ -281,21 +322,21 @@ void render() {
 	GLuint u_MVP = glGetUniformLocation(program.polygonShader, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
-	// send model view matrix to shader
+												// send model view matrix to shader
 	mat4 MV = camera.viewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
 	GLuint u_MV = glGetUniformLocation(program.polygonShader, "u_MV");
 	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 
-	// send light position to shader
+											  // send light position to shader
 	vec4 lightPos = vec4(lightX, lightHeight, lightZ, 1.0);
 	GLuint u_lightPos = glGetUniformLocation(program.polygonShader, "u_lightPos");
 	glUniform4fv(u_lightPos, 1, lightPos); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 
-	// send material option to shader
+										   // send material option to shader
 	GLuint u_material = glGetUniformLocation(program.polygonShader, "u_material");
-	glUniform1i(u_material, materialOption); 
+	glUniform1i(u_material, materialOption);
 
 	// send shader option to shader
 	GLuint u_shadingModel = glGetUniformLocation(program.polygonShader, "u_shadingModel");
@@ -307,13 +348,32 @@ void render() {
 	/*glBindBuffer(GL_VERTEX_ARRAY, ColorCube.vao.vertVBO);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ColorCube.vao.EBO);
-*/
-//glDrawElements(GL_TRIANGLES, ColorCube.NUM_FACES*3, GL_UNSIGNED_INT, 0); // Draw the cube's faces
-//glDrawArrays(GL_TRIANGLES, 0, ColorCube.NUM_VERTS*3); // Draw the cube's faces
+	*/
+	//glDrawElements(GL_TRIANGLES, ColorCube.NUM_FACES*3, GL_UNSIGNED_INT, 0); // Draw the cube's faces
+	//glDrawArrays(GL_TRIANGLES, 0, ColorCube.NUM_VERTS*3); // Draw the cube's faces
 
 
 	glBindBuffer(GL_VERTEX_ARRAY, vao);
-	glDrawArrays(GL_TRIANGLES, 0, mesh.size()*3);
+	glDrawArrays(GL_TRIANGLES, 0, mesh.size() * 3);
+}
+
+void renderAxis() {
+	glUseProgram(program.lineShader);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
+
+	// send model view projection matrix to shader
+	GLuint u_MVP = glGetUniformLocation(program.lineShader, "u_MVP");
+	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
+
+	glBindBuffer(GL_VERTEX_ARRAY, axisVao);
+	glDrawArrays(GL_LINES, 0, 6);
+}
+
+void render() {
+	renderPolygon();
+	//renderAxis();
+
 }
 
 void displayMainWindow(void)
@@ -773,6 +833,7 @@ void printInstructions()
 void initScene() {
 	printInstructions();
 	initModel();
+	initAxis();
 	initCamera(camera, PERSPECTIVE);
 	// init color cube
 	//initColorCube();
