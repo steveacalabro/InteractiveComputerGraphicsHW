@@ -11,6 +11,12 @@
 #include <fstream>
 
 using namespace std;
+
+typedef vec3 point3;
+typedef vec3 color3;
+typedef vec4 point4;
+typedef vec4 color4;
+
 struct VertexArrayObject
 {
 	GLuint id;
@@ -35,6 +41,13 @@ struct Triangle3D
 	vec3 triangleNormal; // the normal of the triangle plane
 	vec3 centerOfMass;
 	
+};
+
+
+struct GeometryMat {
+	mat4 x;
+	mat4 y;
+	mat4 z;
 };
 
 // a mesh is a seris of 3d triangles
@@ -74,4 +87,8 @@ void setCamProjection(Camera &camera, int option);
 void initScene();
 
 int loadSFM(char* fileName, Mesh &mesh);
+int loadBezir(char* fileName, Mesh &mesh);
+vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints, const int &resolution);
+void tessellate(const vector<vector<point3>> patchPoints);
+void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces);
 #endif
