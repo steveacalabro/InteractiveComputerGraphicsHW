@@ -9,7 +9,8 @@ using namespace std;
 GLenum err;
 
 // global shader program
-GLuint program;
+Program program;
+
 
 // global vertex array object
 GLuint vao;
@@ -50,7 +51,7 @@ bool stopAnimation = false;
 
 enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
 enum {METAL, PLASTIC, GOLD };
-enum { GOURAUD, PHONG};
+enum { GOURAUD, PHONG, FLAT};
 // quad generates two triangles for each face and assigns colors
 // to the vertices
 
@@ -99,14 +100,14 @@ void initColorCube()
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points),
 		sizeof(colors), colors);
 
-	glUseProgram(program);
+	glUseProgram(program.polygonShader);
 
 	// set up vertex arrays
-	GLuint vPosition = glGetAttribLocation(program, "vPosition");
+	GLuint vPosition = glGetAttribLocation(program.polygonShader, "vPosition");
 	glEnableVertexAttribArray(vPosition);
 	glVertexAttribPointer(vPosition, 4, GL_FLOAT, GL_FALSE, 0,
 		BUFFER_OFFSET(0));
-	GLuint aColor = glGetAttribLocation(program, "aColor");
+	GLuint aColor = glGetAttribLocation(program.polygonShader, "aColor");
 	glEnableVertexAttribArray(aColor);
 	glVertexAttribPointer(aColor, 4, GL_FLOAT, GL_FALSE, 0,
 		BUFFER_OFFSET(sizeof(points)));
@@ -231,12 +232,13 @@ void initShaderProgram(void)
 {
 	// Load shaders and use the resulting shader program based on the OS
 #ifdef __linux__ 
-	program = InitShader("./shader/vshader21.glsl", "./shader/fshader21.glsl");
+	program.polygonShader = InitShader("./shader/vshader21.glsl", "./shader/fshader21.glsl");
 #elif _WIN32
-	program = InitShader("..\\src\\shader\\vshader21.glsl", "..\\src\\shader\\fshader21.glsl");
+	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
+	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
 #endif
 
-	glUseProgram(program);
+	glUseProgram(program.polygonShader);
 	glClearColor(0.0, 0.0, 0.0, 1.0); // black background
 }
 
@@ -276,27 +278,27 @@ void render() {
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
 
 	// send model view projection matrix to shader
-	GLuint u_MVP = glGetUniformLocation(program, "u_MVP");
+	GLuint u_MVP = glGetUniformLocation(program.polygonShader, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 	// send model view matrix to shader
 	mat4 MV = camera.viewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
-	GLuint u_MV = glGetUniformLocation(program, "u_MV");
+	GLuint u_MV = glGetUniformLocation(program.polygonShader, "u_MV");
 	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 
 	// send light position to shader
 	vec4 lightPos = vec4(lightX, lightHeight, lightZ, 1.0);
-	GLuint u_lightPos = glGetUniformLocation(program, "u_lightPos");
+	GLuint u_lightPos = glGetUniformLocation(program.polygonShader, "u_lightPos");
 	glUniform4fv(u_lightPos, 1, lightPos); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 
 	// send material option to shader
-	GLuint u_material = glGetUniformLocation(program, "u_material");
+	GLuint u_material = glGetUniformLocation(program.polygonShader, "u_material");
 	glUniform1i(u_material, materialOption); 
 
 	// send shader option to shader
-	GLuint u_shadingModel = glGetUniformLocation(program, "u_shadingModel");
+	GLuint u_shadingModel = glGetUniformLocation(program.polygonShader, "u_shadingModel");
 	glUniform1i(u_shadingModel, shaderOption);
 
 	// bind vertex array object
@@ -373,7 +375,7 @@ void shadingMenu(int option)
 {
 	switch (option)
 	{
-	case GOURAUD://perspective
+	case GOURAUD:
 		shaderOption = GOURAUD;
 		fprintf(stdout, " Set shading model to Gouraud\n");
 		break;
@@ -382,10 +384,16 @@ void shadingMenu(int option)
 		shaderOption = PHONG;
 		fprintf(stdout, " Set shading model to Phong\n");
 		break;
-	}
 
+	case FLAT:
+		shaderOption = FLAT;
+		fprintf(stdout, " Set shading model to Flat \n");
+		break;
+	}
 	glutPostRedisplay();
 }
+
+
 
 void parentMenu(int option)
 {
@@ -414,6 +422,7 @@ void createAnimationMenus() {
 	shadingSubMenue = glutCreateMenu(shadingMenu);
 	glutAddMenuEntry("Gouraud", GOURAUD);
 	glutAddMenuEntry("Phong", PHONG);
+	glutAddMenuEntry("Flat", FLAT);
 
 	
 
@@ -500,7 +509,7 @@ void myKeyboard(unsigned char key, int x, int y)
 
 		// exit program
 	case 033:
-		glDeleteProgram(program);
+		glDeleteProgram(program.polygonShader);
 		glutDestroyWindow(mainWindow);
 		exit(EXIT_SUCCESS);
 	}
@@ -597,12 +606,15 @@ void initModel(){
 		int ifSuccess = loadSFM(filePath, mesh);
 	#elif _WIN32
 		
-		char* filePath = "..\\src\\resources\\dragon-50000.smf";
-		int ifSuccess = loadSFM(filePath, mesh);
+		//char* filePath = "..\\src\\resources\\dragon-50000.smf";
+		//int ifSuccess = loadSFM(filePath, mesh);
+		char* filePath = "..\\src\\resources\\bezier_control_points.txt";		
+		int ifSuccess = loadBezir(filePath, mesh);
+
 	#endif
 
 	if (!ifSuccess) {
-		fprintf(stdout, "fail to load SMF file\n");
+		fprintf(stdout, "fail to load Bezir control points file\n");
 		exit(0);
 	}
 
@@ -658,18 +670,18 @@ void initModel(){
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints+sizeNormals, sizeCenterOfMass, centerOfMass);
 
 
-	glUseProgram(program);
+	glUseProgram(program.polygonShader);
 
 	// set up vertex buffer pointers
-	GLuint aPosition = glGetAttribLocation(program, "aPosition");
+	GLuint aPosition = glGetAttribLocation(program.polygonShader, "aPosition");
 	glEnableVertexAttribArray(aPosition);
 	glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
 
-	GLuint aNormal = glGetAttribLocation(program, "aNormal");
+	GLuint aNormal = glGetAttribLocation(program.polygonShader, "aNormal");
 	glEnableVertexAttribArray(aNormal);
 	glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints));
 
-	GLuint aCenterOfMass = glGetAttribLocation(program, "aCenterOfMass");
+	GLuint aCenterOfMass = glGetAttribLocation(program.polygonShader, "aCenterOfMass");
 	glEnableVertexAttribArray(aCenterOfMass);
 	glVertexAttribPointer(aCenterOfMass, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals));
 
@@ -760,9 +772,6 @@ void printInstructions()
 
 void initScene() {
 	printInstructions();
-
-
-
 	initModel();
 	initCamera(camera, PERSPECTIVE);
 	// init color cube

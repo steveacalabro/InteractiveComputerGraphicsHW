@@ -31,6 +31,11 @@ struct IndexBufferObject
 	GLuint numIndices;
 };
 
+struct Program
+{
+	GLuint lineShader;
+	GLuint polygonShader;
+};
 
 // 3D triangle, each triangle has 3 vertices and 3 normals
 struct Triangle3D
