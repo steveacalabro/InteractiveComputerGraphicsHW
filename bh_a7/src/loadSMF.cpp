@@ -291,10 +291,6 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 }
 
 void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals) {
-	//vector<point3> vertices;
-	//vector<vec3>   normals;
-	//vector<point3> faces;
-	//Triangle3D facet;
 
 	int uLength = patchPoints.size();
 	int vLength = patchPoints[0].size();
@@ -306,11 +302,10 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 			if (u < uLength - 1 && v < vLength - 1) {
 				//! smf index starts from 1 instead of 0, so need to +1
 
-				// counter colock wise, east triangle
+				// counter counter clock wise, east triangle
 				faces.push_back(point3(u*vLength + v + 1, (u + 1)*vLength + v + 1, (u + 1)*vLength + v + 1 + 1));
 
-				// counter colock wise, north triangle
-				//faces.push_back(point3(u*vLength + v + 1, u *vLength + v + 1 + 1, (u + 1)*vLength + v + 1 + 1));
+				// counter clock wise, north triangle
 				faces.push_back(point3(u*vLength + v + 1, (u + 1)*vLength + v + 1 + 1, u *vLength + v + 1 + 1));
 			}
 			
