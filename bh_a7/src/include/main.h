@@ -76,7 +76,11 @@ void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, c
 void initShaderProgram(void);
 
 void render();
+void selectControlPoint(int selectedPoint);
+void resetControlPoint(int selectedPoint);
+void initControlPoints();
 void displayMainWindow(void);
+void initMesh();
 
 void projectionMenu(int option);
 void createAnimationMenus();
@@ -92,7 +96,7 @@ void setCamProjection(Camera &camera, int option);
 void initScene();
 
 int loadSFM(char* fileName, Mesh &mesh);
-int loadBezir(char* fileName, Mesh &mesh);
+int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints);
 vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints, const int &resolution);
 void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals);
 void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh);
