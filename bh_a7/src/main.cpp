@@ -40,7 +40,7 @@ point4 points[NumVertices];
 double camRadius{ 6.0 }, camY{ 0.0 };
 double speed{ 0.1 };
 
-double lightRadius{ 6.0 }, lightHeight{ 0.0 }, lightAngle{ 0.0 };
+double lightRadius{ 6.0 }, lightX{ 0.0 }, lightY{ 0.0 }, lightZ{ 0.0 }, lightAngle{ 0.0 };
 
 int materialOption{ 0 };
 int shaderOption{ 0 };
@@ -116,48 +116,7 @@ void initColorCube()
 	//thetaLoc = glGetUniformLocation(program, "theta");
 }
 
-void initAxis()
-{
-	double points[] = { 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, // x axis
-						0.0, 0.0, 0.0,  0.0, 1.0, 0.0, // y axis
-						0.0, 0.0, 0.0,  0.0, 0.0, 1.0, // z axis
-	};
 
-	double colors[] = { 1.0, 0.0, 0.0,  // x axis
-						0.0, 1.0, 0.0,  // y axis
-						0.0, 0.0, 1.0,  // z axis
-	};
-
-	// Create a vertex array object
-	glGenVertexArrays(1, &axisVao);
-	glBindVertexArray(axisVao);
-
-	// Create and initialize a buffer object
-	GLuint buffer;
-	glGenBuffers(1, &buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points) +
-		sizeof(colors), NULL, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0,
-		sizeof(points), points);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points),
-		sizeof(colors), colors);
-
-	glUseProgram(program.lineShader);
-
-	// set up vertex arrays
-	GLuint vPosition = glGetAttribLocation(program.lineShader, "vPosition");
-	glEnableVertexAttribArray(vPosition);
-	glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0,
-		BUFFER_OFFSET(0));
-	GLuint aColor = glGetAttribLocation(program.lineShader, "aColor");
-	glEnableVertexAttribArray(aColor);
-	glVertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 0,
-		BUFFER_OFFSET(sizeof(points)));
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-}
 
 
 template <typename T>
@@ -276,8 +235,9 @@ void initShaderProgram(void)
 #ifdef __linux__ 
 	program.polygonShader = InitShader("./shader/vshader21.glsl", "./shader/fshader21.glsl");
 #elif _WIN32
-	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
 	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
+	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
+	
 #endif
 
 	glUseProgram(program.polygonShader);
@@ -290,31 +250,11 @@ void initShaderProgram(void)
 
 //----------------------------------------------------------------------------
 void renderPolygon() {
+	glUseProgram(program.polygonShader);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-	// update camera rotation and height
-	double angle = t * speed;
-	double rotationCenterX = 0.0;
-	double rotationCenterZ = 0.0;
 
-	double camX = rotationCenterX + camRadius*cos(DegreesToRadians * 90 + angle);
-	double camZ = rotationCenterZ + camRadius*sin(DegreesToRadians * 90 + angle);
-	vec4 camPos = vec4(camX, camY, camZ, 1.0);
-	vec4 camTarget = vec4(0.0, 0.0, 0.0, 1.0);
-	vec4 camUp = vec4(0.0, 1.0, 0.0, 0.0);
-
-	camera.LookAt(camPos, camTarget, camUp);
-
-	// update light rotation and height
-	double lightX = rotationCenterX + lightRadius*cos(DegreesToRadians * lightAngle);
-	double lightZ = rotationCenterZ + lightRadius*sin(DegreesToRadians * lightAngle);
-
-
-	// update MVP
-	camera.updateMatrix();
-	ColorCube.updateMatrix();
-	scene.updateMatrix();
 
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
 
@@ -329,7 +269,7 @@ void renderPolygon() {
 
 
 											  // send light position to shader
-	vec4 lightPos = vec4(lightX, lightHeight, lightZ, 1.0);
+	vec4 lightPos = vec4(lightX, lightY, lightZ, 1.0);
 	GLuint u_lightPos = glGetUniformLocation(program.polygonShader, "u_lightPos");
 	glUniform4fv(u_lightPos, 1, lightPos); // mat.h is row major, so use GL_TRUE to transpsoe t
 
@@ -353,8 +293,9 @@ void renderPolygon() {
 	//glDrawArrays(GL_TRIANGLES, 0, ColorCube.NUM_VERTS*3); // Draw the cube's faces
 
 
-	glBindBuffer(GL_VERTEX_ARRAY, vao);
+	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, mesh.size() * 3);
+
 }
 
 void renderAxis() {
@@ -366,13 +307,48 @@ void renderAxis() {
 	GLuint u_MVP = glGetUniformLocation(program.lineShader, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
-	glBindBuffer(GL_VERTEX_ARRAY, axisVao);
+	glBindVertexArray(axisVao);
+
+	glEnable(GL_PROGRAM_POINT_SIZE);
 	glDrawArrays(GL_LINES, 0, 6);
 }
 
+
+void updateScene() {
+	// update camera rotation and height
+	double angle = t * speed;
+	double rotationCenterX = 0.0;
+	double rotationCenterZ = 0.0;
+
+	double camX = rotationCenterX + camRadius*cos(DegreesToRadians * 90 + angle);
+	double camZ = rotationCenterZ + camRadius*sin(DegreesToRadians * 90 + angle);
+	vec4 camPos = vec4(camX, camY, camZ, 1.0);
+	vec4 camTarget = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 camUp = vec4(0.0, 1.0, 0.0, 0.0);
+
+	camera.LookAt(camPos, camTarget, camUp);
+
+	// update MVP
+	camera.updateMatrix();
+	ColorCube.updateMatrix();
+	scene.updateMatrix();
+
+	// update light rotation and height
+	lightX = rotationCenterX + lightRadius*cos(DegreesToRadians * lightAngle);
+	lightZ = rotationCenterZ + lightRadius*sin(DegreesToRadians * lightAngle);
+}
+
+
 void render() {
+
+	updateScene();
 	renderPolygon();
-	//renderAxis();
+
+	//glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	renderAxis();
 
 }
 
@@ -548,10 +524,10 @@ void myKeyboard(unsigned char key, int x, int y)
 
 
 		// light height
-	case 'c':case 'C': lightHeight += delta;
-		fprintf(stdout, "Light Y position increased, now is %2f\n", lightHeight); break;
-	case 'v':case 'V': lightHeight -= delta;
-		fprintf(stdout, "Light Y position decreased, now is %2f\n", lightHeight); break;
+	case 'c':case 'C': lightY += delta;
+		fprintf(stdout, "Light Y position increased, now is %2f\n", lightY); break;
+	case 'v':case 'V': lightY -= delta;
+		fprintf(stdout, "Light Y position decreased, now is %2f\n", lightY); break;
 
 		// light angle
 	case 'b':case 'B': lightAngle += theta;
@@ -658,8 +634,53 @@ int createOpenGLContext(const char* windowName, const int x, const int y, const 
 	return windowID;
 }
 
+void initAxis()
+{
+	glUseProgram(program.lineShader);
+
+	double points[18] = { 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, // x axis
+		0.0, 0.0, 0.0,  0.0, 1.0, 0.0, // y axis
+		0.0, 0.0, 0.0,  0.0, 0.0, 1.0 // z axis
+	};
+
+	double colors[9] = { 1.0, 0.0, 0.0,  // x axis
+		0.0, 1.0, 0.0,  // y axis
+		0.0, 0.0, 1.0  // z axis
+	};
+
+	// Create a vertex array object
+	glGenVertexArrays(1, &axisVao);
+	glBindVertexArray(axisVao);
+
+	// Create and initialize a buffer object
+	GLuint buffer;
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points) +
+		sizeof(colors), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0,
+		sizeof(points), points);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points),
+		sizeof(colors), colors);
+
+	
+
+	// set up vertex arrays
+	GLuint aPosition = glGetAttribLocation(program.lineShader, "aPosition");
+	glEnableVertexAttribArray(aPosition);
+	glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, 0,
+		BUFFER_OFFSET(0));
+	GLuint aColor = glGetAttribLocation(program.lineShader, "aColor");
+	glEnableVertexAttribArray(aColor);
+	glVertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 0,
+		BUFFER_OFFSET(sizeof(points)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+}
 
 void initModel(){
+	glUseProgram(program.polygonShader);
 
 	#ifdef __linux__ 
 		char* filePath = "./resources/dragon-50000.smf";
@@ -686,10 +707,12 @@ void initModel(){
 	// dynamic array
 	point3* points = new point3[vertArrayLength];
 	vec3* normals = new vec3[vertArrayLength];
+	vec3* triangleNormal = new vec3[vertArrayLength];
 	point3* centerOfMass = new point3[vertArrayLength];
 
 	int sizePoints = vertArrayLength*sizeof(points[0]);
 	int sizeNormals = vertArrayLength*sizeof(normals[0]);
+	int sizeTriangleNormal = vertArrayLength*sizeof(triangleNormal[0]);
 	int sizeCenterOfMass = vertArrayLength* sizeof(centerOfMass[0]);
 
 
@@ -702,6 +725,10 @@ void initModel(){
 		normals[3 * i]     = mesh[i].normals[0];
 		normals[3 * i + 1] = mesh[i].normals[1];
 		normals[3 * i + 2] = mesh[i].normals[2];
+
+		triangleNormal[3 * i] = mesh[i].triangleNormal;
+		triangleNormal[3 * i + 1] = mesh[i].triangleNormal;
+		triangleNormal[3 * i + 2] = mesh[i].triangleNormal;
 
 		centerOfMass[3 * i]     = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 1] = mesh[i].centerOfMass;
@@ -718,7 +745,7 @@ void initModel(){
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
 	// total buffer size
-	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal, NULL, GL_STATIC_DRAW);
 
 	// points
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizePoints, points);
@@ -729,8 +756,9 @@ void initModel(){
 	//center of mass
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints+sizeNormals, sizeCenterOfMass, centerOfMass);
 
+	// facet normal for flat shading 
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass, sizeTriangleNormal, triangleNormal);
 
-	glUseProgram(program.polygonShader);
 
 	// set up vertex buffer pointers
 	GLuint aPosition = glGetAttribLocation(program.polygonShader, "aPosition");
@@ -745,14 +773,17 @@ void initModel(){
 	glEnableVertexAttribArray(aCenterOfMass);
 	glVertexAttribPointer(aCenterOfMass, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals));
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	GLuint aFlatNormal = glGetAttribLocation(program.polygonShader, "aFlatNormal");
+	glEnableVertexAttribArray(aFlatNormal);
+	glVertexAttribPointer(aFlatNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals + sizeCenterOfMass));
 
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// delete dynamic array pointers
 	delete[] points;
 	delete[] normals;
-	delete[] centerOfMass;
-
+	delete[] centerOfMass; 
+	delete[] triangleNormal;
 
 }
 
@@ -832,8 +863,9 @@ void printInstructions()
 
 void initScene() {
 	printInstructions();
-	initModel();
 	initAxis();
+	initModel();
+	
 	initCamera(camera, PERSPECTIVE);
 	// init color cube
 	//initColorCube();
