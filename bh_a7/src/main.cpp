@@ -13,8 +13,17 @@ Program program;
 
 
 // global vertex array object
-GLuint vao, axisVao;
+GLuint vao, axisVao, controlPointsVao;
 
+// Bezir curve control points
+vector<point3> controlPoints;
+vector<point3> controlColors;
+vector<float> pointSize;
+
+int selectedPoint{ 0 };
+//double deltaX, deltaY, deltaZ;
+double offset = 0.01;
+int resolution{ 10 };
 // main window id
 int mainWindow;
 
@@ -42,8 +51,7 @@ double speed{ 0.1 };
 
 double lightRadius{ 6.0 }, lightX{ 0.0 }, lightY{ 0.0 }, lightZ{ 0.0 }, lightAngle{ 0.0 };
 
-int materialOption{ 0 };
-int shaderOption{ 0 };
+
 
 double t{ 0.0 }, dt{ 0.01 };
 //double angle{ 0.0 };
@@ -52,6 +60,9 @@ bool stopAnimation = false;
 enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
 enum {METAL, PLASTIC, GOLD };
 enum { GOURAUD, PHONG, FLAT};
+
+int materialOption{ METAL };
+int shaderOption{ FLAT };
 // quad generates two triangles for each face and assigns colors
 // to the vertices
 
@@ -254,16 +265,16 @@ void renderPolygon() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-
-
-	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
+	mat4 scaleMatrix = Angel::Scale(0.5, 0.5, 0.5);
+	mat4 translationMatrix = Angel::Translate(-2.0, -2.0, 0.0);
+	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
 
 	// send model view projection matrix to shader
 	GLuint u_MVP = glGetUniformLocation(program.polygonShader, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 												// send model view matrix to shader
-	mat4 MV = camera.viewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
+	mat4 MV = camera.viewMatrix * scene.compositeMatrix * scaleMatrix;
 	GLuint u_MV = glGetUniformLocation(program.polygonShader, "u_MV");
 	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
 
@@ -301,7 +312,10 @@ void renderPolygon() {
 void renderAxis() {
 	glUseProgram(program.lineShader);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * ColorCube.compositeMatrix;
+
+	mat4 scaleMatrix = Angel::Scale(2.0, 2.0, 2.0);
+	
+	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix;
 
 	// send model view projection matrix to shader
 	GLuint u_MVP = glGetUniformLocation(program.lineShader, "u_MVP");
@@ -311,6 +325,25 @@ void renderAxis() {
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glDrawArrays(GL_LINES, 0, 6);
+}
+
+void rendeControlPoints() {
+	initControlPoints();
+
+	mat4 scaleMatrix = Angel::Scale(0.5, 0.5, 0.5);
+	mat4 translationMatrix = Angel::Translate(-2.0, -2.0, 0.0);
+	glUseProgram(program.lineShader);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
+
+	// send model view projection matrix to shader
+	GLuint u_MVP = glGetUniformLocation(program.lineShader, "u_MVP");
+	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
+
+	glBindVertexArray(controlPointsVao);
+
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glDrawArrays(GL_POINTS, 0, controlPoints.size());
 }
 
 
@@ -342,13 +375,17 @@ void updateScene() {
 void render() {
 
 	updateScene();
+	mesh.clear();
+	constructMesh(controlPoints, resolution, mesh);
+	initMesh();
 	renderPolygon();
-
 	//glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glEnable(GL_BLEND);
 
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	renderAxis();
+
+	rendeControlPoints();
 
 }
 
@@ -480,7 +517,7 @@ void resetTransformation() {
 void myKeyboard(unsigned char key, int x, int y)
 {
 	double delta = 0.1; double theta = 10.0;
-	
+	double deltaX{0}, deltaY{ 0 }, deltaZ{ 0 };
 	switch (key) {
 		// camera radius
 	case 'd':case 'D': camRadius += delta; 
@@ -534,6 +571,59 @@ void myKeyboard(unsigned char key, int x, int y)
 		fprintf(stdout, "Light angle increased, now is %2f\n", lightAngle); break;
 	case 'n':case 'N': lightAngle -= theta;
 		fprintf(stdout, "Light angle decreased, now is %2f\n", lightAngle); break;
+
+		// change control points
+	case 't':case 'T': deltaX -= offset;
+		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		fprintf(stdout, "Control point X decreased, now is %2f\n", controlPoints[selectedPoint].x); break;
+	case 'y':case 'Y': deltaX += offset;
+		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		fprintf(stdout, "Control point X increased, now is %2f\n", controlPoints[selectedPoint].x); break;
+	case 'u':case 'U': deltaY -= offset;
+		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		fprintf(stdout, "Control point Y decreased, now is %2f\n", controlPoints[selectedPoint].y); break;
+	case 'i':case 'I': deltaY += offset;
+		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		fprintf(stdout, "Control point Y increased, now is %2f\n", controlPoints[selectedPoint].y); break;
+	case 'o':case 'O': deltaZ -= offset;
+		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		fprintf(stdout, "Control point Z decreased, now is %2f\n", controlPoints[selectedPoint].z); break;
+	case 'p':case 'P': deltaZ += offset;
+		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		fprintf(stdout, "Control point Z increased, now is %2f\n", controlPoints[selectedPoint].z); break;
+	
+		/*if (deltaX != 0 || deltaY != 0 || deltaZ != 0) {
+			controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
+		}*/
+
+		// select control points
+	case 'h':case 'H': 
+		// reset the previous control point color
+		resetControlPoint(selectedPoint);
+
+		selectedPoint += 1;
+		if (selectedPoint > controlPoints.size() - 1) {
+			selectedPoint = 0;
+		}
+		
+		selectControlPoint(selectedPoint);
+		fprintf(stdout, "Control point %d selected \n", selectedPoint); break;
+
+		// decrease Bezir patch resolution		
+	case 'k':case 'K': resolution -= 1;
+		if (resolution <= 1) {
+			resolution = 2;
+		}
+		
+		fprintf(stdout, "Bezir patch resolution decrease to %d\n", resolution); break;
+		// increase Bezir patch resolution
+	case 'l':case 'L': resolution += 1; 
+		if (resolution > 20) {
+			resolution = 20;
+			fprintf(stdout, "Stop pressing, large resolution will crash your computer \n", resolution); break;
+		}
+		//constructMesh(controlPoints, resolution, mesh);
+		fprintf(stdout, "Bezir patch resolution increase to %d\n", resolution); break;
 
 
 	//	// reset transformations
@@ -638,14 +728,14 @@ void initAxis()
 {
 	glUseProgram(program.lineShader);
 
-	double points[18] = { 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, // x axis
-		0.0, 0.0, 0.0,  0.0, 1.0, 0.0, // y axis
-		0.0, 0.0, 0.0,  0.0, 0.0, 1.0 // z axis
+	point3 points[6] = { point3(0.0, 0.0, 0.0), point3(1.0, 0.0, 0.0), // x axis
+		point3(0.0, 0.0, 0.0),  point3(0.0, 1.0, 0.0), // y axis
+		point3(0.0, 0.0, 0.0),  point3(0.0, 0.0, 1.0) // z axis
 	};
 
-	double colors[9] = { 1.0, 0.0, 0.0,  // x axis
-		0.0, 1.0, 0.0,  // y axis
-		0.0, 0.0, 1.0  // z axis
+	color3 colors[6] = { color3(1.0, 0.0, 0.0), color3(1.0, 0.0, 0.0), // x axis
+		color3(0.0, 1.0, 0.0), color3(0.0, 1.0, 0.0),  // y axis
+		color3(0.0, 0.0, 1.0), color3(0.0, 0.0, 1.0)  // z axis
 	};
 
 	// Create a vertex array object
@@ -679,26 +769,63 @@ void initAxis()
 
 }
 
-void initModel(){
-	glUseProgram(program.polygonShader);
+void initControlPoints()
+{
+	glUseProgram(program.lineShader);
 
-	#ifdef __linux__ 
-		char* filePath = "./resources/dragon-50000.smf";
-		int ifSuccess = loadSFM(filePath, mesh);
-	#elif _WIN32
-		
-		//char* filePath = "..\\src\\resources\\dragon-50000.smf";
-		//int ifSuccess = loadSFM(filePath, mesh);
-		char* filePath = "..\\src\\resources\\bezier_control_points.txt";		
-		int ifSuccess = loadBezir(filePath, mesh);
-
-	#endif
-
-	if (!ifSuccess) {
-		fprintf(stdout, "fail to load Bezir control points file\n");
-		exit(0);
+	vector<point3> &colors = controlColors;
+	vector<point3> &points = controlPoints;
+	
+	
+	// initialize colors if it is not initialized
+	if (colors.size() == 0) {
+		for (int i = 0; i < points.size(); i++) {
+			colors.push_back(point3(1.0, 1.0, 1.0));
+		}
 	}
 
+	if (pointSize.size() == 0) {
+		for (int i = 0; i < points.size(); i++) {
+			pointSize.push_back(5);
+		}
+	}
+
+	int sizePoints = points.size()*sizeof(points[0]);
+	int sizeColors = colors.size()*sizeof(colors[0]);
+	int sizePointSize = pointSize.size()*sizeof(pointSize[0]);
+
+	// Create a vertex array object
+	glGenVertexArrays(1, &controlPointsVao);
+	glBindVertexArray(controlPointsVao);
+
+	// Create and initialize a buffer object
+	GLuint buffer;
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeColors + sizePointSize, NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizePoints, &points[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints, sizeColors, &colors[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints+ sizeColors, sizePointSize, &pointSize[0]);
+
+
+	// set up vertex arrays
+	GLuint aPosition = glGetAttribLocation(program.lineShader, "aPosition");
+	glEnableVertexAttribArray(aPosition);
+	glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+
+	GLuint aColor = glGetAttribLocation(program.lineShader, "aColor");
+	glEnableVertexAttribArray(aColor);
+	glVertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints));
+
+	GLuint aPointSize = glGetAttribLocation(program.lineShader, "aPointSize");
+	glEnableVertexAttribArray(aPointSize);
+	glVertexAttribPointer(aPointSize, 1, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeColors));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+}
+
+void initMesh() {
 	int meshLength = mesh.size();
 	int numVertPerTriangle = 3;
 
@@ -718,11 +845,11 @@ void initModel(){
 
 	for (int i = 0; i < meshLength; i++) {
 
-		points[3 * i]     = mesh[i].vertices[0];
+		points[3 * i] = mesh[i].vertices[0];
 		points[3 * i + 1] = mesh[i].vertices[1];
 		points[3 * i + 2] = mesh[i].vertices[2];
 
-		normals[3 * i]     = mesh[i].normals[0];
+		normals[3 * i] = mesh[i].normals[0];
 		normals[3 * i + 1] = mesh[i].normals[1];
 		normals[3 * i + 2] = mesh[i].normals[2];
 
@@ -730,7 +857,7 @@ void initModel(){
 		triangleNormal[3 * i + 1] = mesh[i].triangleNormal;
 		triangleNormal[3 * i + 2] = mesh[i].triangleNormal;
 
-		centerOfMass[3 * i]     = mesh[i].centerOfMass;
+		centerOfMass[3 * i] = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 1] = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 2] = mesh[i].centerOfMass;
 	}
@@ -754,7 +881,7 @@ void initModel(){
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints, sizeNormals, normals);
 
 	//center of mass
-	glBufferSubData(GL_ARRAY_BUFFER, sizePoints+sizeNormals, sizeCenterOfMass, centerOfMass);
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals, sizeCenterOfMass, centerOfMass);
 
 	// facet normal for flat shading 
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass, sizeTriangleNormal, triangleNormal);
@@ -782,10 +909,35 @@ void initModel(){
 	// delete dynamic array pointers
 	delete[] points;
 	delete[] normals;
-	delete[] centerOfMass; 
+	delete[] centerOfMass;
 	delete[] triangleNormal;
+}
+
+void initModel(){
+	glUseProgram(program.polygonShader);
+
+	#ifdef __linux__ 
+		char* filePath = "./resources/dragon-50000.smf";
+		int ifSuccess = loadSFM(filePath, mesh);
+	#elif _WIN32
+		
+		//char* filePath = "..\\src\\resources\\dragon-50000.smf";
+		//int ifSuccess = loadSFM(filePath, mesh);
+		char* filePath = "..\\src\\resources\\bezier_control_points.txt";		
+		int ifSuccess = loadBezir(filePath, mesh, controlPoints);
+
+	#endif
+
+	if (!ifSuccess) {
+		fprintf(stdout, "fail to load Bezir control points file\n");
+		exit(0);
+	}
+
+	initMesh();
 
 }
+
+
 
 void initCamera(Camera &camera, int option)
 {
@@ -842,10 +994,33 @@ void setCamProjection(Camera &camera, int option) {
 		
 
 }
+void resetControlPoint(int selectedPoint) {
+	// change the color of the selected point to red
+	controlColors[selectedPoint] = color3(1.0, 1.0, 1.0);
+	pointSize[selectedPoint] = 5.0;
+}
+
+void selectControlPoint(int selectedPoint) {
+	// change the color of the selected point to red
+	controlColors[selectedPoint] = color3(1.0, 0.0, 0.0);
+	pointSize[selectedPoint] = 8.0;
+
+
+}
+
+void translateControlPoint(int selectedPoint, double x, double y, double z) {
+
+	controlPoints[selectedPoint] += vec3(x,y,z);
+
+}
+
 
 void printInstructions()
 {
 	fprintf(stdout, "***************************** Instructions *********************************** \n");
+
+
+
 	fprintf(stdout, "1. Press 'W', 'S' for increasing and decreasing the camera's Y position \n");
 	fprintf(stdout, "2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n");
 	fprintf(stdout, "3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n");
@@ -855,17 +1030,28 @@ void printInstructions()
 	fprintf(stdout, "6. Press 'B', 'N' to increasing and decreasing the light's rotation anglen \n");
 	fprintf(stdout, "7. Press 'SPACE' to pause/resume animationn \n");
 
-	fprintf(stdout, "8. Use mouse right click to change camera's projection mode, material and shading model\n");
-	fprintf(stdout, "9. Press 'ESC' to exit program \n");
+	fprintf(stdout, "8. Press 'H' to select the next control point \n");
+	fprintf(stdout, "9. Press 'T', 'Y' to increasing and decreasing the control point's X \n");
+	fprintf(stdout, "10. Press 'U', 'I' to increasing and decreasing the control point's Y \n");
+	fprintf(stdout, "10. Press 'O', 'P' to increasing and decreasing the control point's Z \n");
+
+	
+	fprintf(stdout, "11. Press 'K', 'L' to increasing and decreasing the sampling of the patch  \n");
+
+
+	fprintf(stdout, "13. Use mouse right click to change camera's projection mode, material and shading model\n");
+	fprintf(stdout, "14. Press 'ESC' to exit program \n");
 
 }
 
 
 void initScene() {
 	printInstructions();
+
 	initAxis();
 	initModel();
-	
+	//initControlPoints();
+
 	initCamera(camera, PERSPECTIVE);
 	// init color cube
 	//initColorCube();
