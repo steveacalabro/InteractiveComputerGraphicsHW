@@ -1,7 +1,9 @@
 #version 120
+#define FLAT 2
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aCenterOfMass;
+attribute vec3 aFlatNormal;
 
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
@@ -9,6 +11,7 @@ uniform mat4 u_MV;
 uniform vec4 u_lightPos;
 uniform int u_material;
 
+uniform int u_shadingModel;
 
 // defined in view space
 struct Vertex{
@@ -136,6 +139,21 @@ void main()
 	vViewDir = cameraPos - vertex.position;
 
 
+	// flat shading
+	if(u_shadingModel == FLAT)
+	{
+		// coord and normal in view space
+		normalViewSpace = u_MV * vec4(aFlatNormal, 0.0); // remember to transform normal too
+		positionViewSpace = u_MV * vec4(aCenterOfMass, 1.0);
+
+		vertex.position = positionViewSpace;
+		vertex.normal = vec4(normalize(normalViewSpace).xyz, 0.0);
+		
+		color0 = diffuseColor(light0, material, vertex);
+		color1 = diffuseColor(light1, material, vertex);
+
+		vColor = clamp(color1 + color0, 0.0, 1.0);	
+	}
 }
 
 
