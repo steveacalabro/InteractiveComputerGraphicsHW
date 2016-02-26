@@ -134,11 +134,11 @@ int loadSFM(char* fileName, Mesh &mesh) {
 }
 
 
-int loadBezir(char* fileName, Mesh &mesh) {
+int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints) {
 	fstream file(fileName);
 	string buffer;
 
-	vector<point3> controlPoints;
+	//vector<point3> controlPoints;
 	vector<vector<point3>> meshVerts;
 	vector<point3> vertices;
 	vector<vec3>   normals;
@@ -192,8 +192,8 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 	tessellate(meshVerts, vertices, faces, normals);
 
 	// export to smf file
-	string outputSMF = "..\\src\\resources\\bezierPatch.obj";
-	exportSMF(outputSMF, vertices, faces);
+	/*string outputSMF = "..\\src\\resources\\bezierPatch.obj";
+	exportSMF(outputSMF, vertices, faces);*/
 
 
 	// calculate the average normals for shanding
@@ -219,7 +219,7 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 		facet.normals[2] = normals[facet.faces[2]];
 
 
-		temp.set3Points(facet.vertices[0], facet.vertices[2], facet.vertices[1]); // in this case clock wise is normal direction
+		temp.set3Points(facet.vertices[0], facet.vertices[1], facet.vertices[2]); // in this case clock wise is normal direction
 
 		facet.triangleNormal = temp.normal;
 		facet.centerOfMass = (facet.vertices[0] + facet.vertices[1] + facet.vertices[2]) / 3;
@@ -241,7 +241,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 
 	vec4 bu, bv;
 
-	while(u < 1.0) {
+	while(u <= 1.0) {
 		vector<point3> curveVerts;
 		// blending function b(u)
 		bu[0] = pow(1-u, 3);
@@ -250,7 +250,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 		bu[3] = pow(u, 3);
 
 		double v = 0;
-		while (v < 1.0) {
+		while (v <= 1.0) {
 			point3 interpolatedPoint;
 			// blending function b(v)
 			bv[0] = pow(1 - v, 3);
@@ -271,6 +271,10 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 			curveVerts.push_back(interpolatedPoint);
 			//interpolatedPoint = point3(0.0, 0.0, 0.0);
 
+			if (v == 1.0) {
+				break;
+			}
+
 			v += stepSize;
 			if (v > 1.0) {
 				v = 1.0;
@@ -278,6 +282,10 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 		}
 
 		patchVerts.push_back(curveVerts);
+
+		if (u == 1.0) {
+			break;
+		}
 
 		u += stepSize;
 		if (u > 1.0) {
