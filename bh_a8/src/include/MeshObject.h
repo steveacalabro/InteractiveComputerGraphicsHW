@@ -11,6 +11,33 @@
 #include <string>
 using namespace std;
 
+// 3D triangle, each triangle has 3 vertices and 3 normals
+struct Triangle3D
+{
+	int faces[3]; // face id in SMF model
+	vec3 vertices[3]; // 3 vertex coord
+	vec3 normals[3]; // 3 normal 
+	vec3 triangleNormal; // the normal of the triangle plane
+	vec3 centerOfMass;
+
+};
+
+// a mesh is a seris of 3d triangles
+typedef vector<Triangle3D> Mesh;
+
+
+struct VertexArrayObject
+{
+	GLuint id;
+	GLuint vertVBO;
+	//GLuint colorVBO;
+	GLuint EBO;
+};
+
+enum ObjectColorIndex
+{
+	ORIGINAL, PICKED
+};
 
 class MeshObject {
 public:
@@ -19,6 +46,7 @@ public:
 
 	VertexArrayObject vao;
 
+	color3 objectColor[2];
 	// transformation matrices
 	mat4 scaleMatrix = Angel::identity();
 	mat4 rotationMatrix = Angel::identity();

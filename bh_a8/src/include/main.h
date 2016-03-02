@@ -5,7 +5,7 @@
 //#include "BoxGeometry.h"
 #include "Camera.h"
 #include "Scene.h"
-
+#include "MeshObject.h"
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -17,13 +17,6 @@ typedef vec3 color3;
 typedef vec4 point4;
 typedef vec4 color4;
 
-struct VertexArrayObject
-{
-	GLuint id;
-	GLuint vertVBO;
-	//GLuint colorVBO;
-	GLuint EBO;
-};
 
 struct IndexBufferObject
 {
@@ -37,26 +30,9 @@ struct Program
 	GLuint polygonShader;
 };
 
-// 3D triangle, each triangle has 3 vertices and 3 normals
-struct Triangle3D
-{
-	int faces[3]; // face id in SMF model
-	vec3 vertices[3]; // 3 vertex coord
-	vec3 normals[3]; // 3 normal 
-	vec3 triangleNormal; // the normal of the triangle plane
-	vec3 centerOfMass;
-	
-};
 
 
-struct GeometryMat {
-	mat4 x;
-	mat4 y;
-	mat4 z;
-};
 
-// a mesh is a seris of 3d triangles
-typedef vector<Triangle3D> Mesh;
 
 
 
