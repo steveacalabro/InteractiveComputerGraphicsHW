@@ -244,7 +244,8 @@ void initShaderProgram(void)
 {
 	// Load shaders and use the resulting shader program based on the OS
 #ifdef __linux__ 
-	program.polygonShader = InitShader("./shader/vshader21.glsl", "./shader/fshader21.glsl");
+	program.lineShader = InitShader("./shader/vLineShader.glsl", "./shader/fLineShader.glsl");
+	program.polygonShader = InitShader("./shader/vPolygonShader.glsl", "./shader/fPolygonShader.glsl");
 #elif _WIN32
 	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
 	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
@@ -343,6 +344,7 @@ void rendeControlPoints() {
 	glBindVertexArray(controlPointsVao);
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(0x8861);
 	glDrawArrays(GL_POINTS, 0, controlPoints.size());
 }
 
@@ -786,7 +788,7 @@ void initControlPoints()
 
 	if (pointSize.size() == 0) {
 		for (int i = 0; i < points.size(); i++) {
-			pointSize.push_back(5);
+			pointSize.push_back(5.0);
 		}
 	}
 
@@ -917,17 +919,18 @@ void initModel(){
 	glUseProgram(program.polygonShader);
 
 	#ifdef __linux__ 
-		char* filePath = "./resources/dragon-50000.smf";
-		int ifSuccess = loadSFM(filePath, mesh);
+		//char* filePath = "./resources/dragon-50000.smf";
+		//int ifSuccess = loadSFM(filePath, mesh);
+		char* filePath = "./resources/bezier_control_points.txt";
 	#elif _WIN32
 		
 		//char* filePath = "..\\src\\resources\\dragon-50000.smf";
 		//int ifSuccess = loadSFM(filePath, mesh);
 		char* filePath = "..\\src\\resources\\bezier_control_points.txt";		
-		int ifSuccess = loadBezir(filePath, mesh, controlPoints);
+		
 
 	#endif
-
+		int ifSuccess = loadBezir(filePath, mesh, controlPoints);
 	if (!ifSuccess) {
 		fprintf(stdout, "fail to load Bezir control points file\n");
 		exit(0);
