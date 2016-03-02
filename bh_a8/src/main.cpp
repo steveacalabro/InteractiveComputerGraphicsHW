@@ -1,7 +1,7 @@
 ﻿// HW6
 #include "main.h"
 #include "BoxGeometry.h"
-#include "MeshObject.h"
+
 using namespace std;
 
 
@@ -33,7 +33,7 @@ enum class VBO_OPTION{ VERTEX, COLOR };
 bool onPerspective{ true };
 
 // mode, camera and scene class
-BoxGeometry ColorCube;
+//BoxGeometry ColorCube;
 Camera camera;
 Scene scene;
 Mesh mesh;
@@ -296,7 +296,6 @@ void updateScene() {
 
 	// update MVP
 	camera.updateMatrix();
-	ColorCube.updateMatrix();
 	scene.updateMatrix();
 
 	// update light rotation and height
@@ -445,13 +444,9 @@ void createAnimationMenus() {
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-void resetTransformation() {
-	ColorCube.setIdentity();
-}
-
-void resetView() {
-	camera.reset();
-}
+//void resetTransformation() {
+//	ColorCube.setIdentity();
+//}
 
 void myKeyboard(unsigned char key, int x, int y)
 {
@@ -511,62 +506,14 @@ void myKeyboard(unsigned char key, int x, int y)
 	case 'n':case 'N': lightAngle -= theta;
 		fprintf(stdout, "Light angle decreased, now is %2f\n", lightAngle); break;
 
-		// change control points
-	case 't':case 'T': deltaX -= offset;
-		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		fprintf(stdout, "Control point X decreased, now is %2f\n", controlPoints[selectedPoint].x); break;
-	case 'y':case 'Y': deltaX += offset;
-		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		fprintf(stdout, "Control point X increased, now is %2f\n", controlPoints[selectedPoint].x); break;
-	case 'u':case 'U': deltaY -= offset;
-		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		fprintf(stdout, "Control point Y decreased, now is %2f\n", controlPoints[selectedPoint].y); break;
-	case 'i':case 'I': deltaY += offset;
-		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		fprintf(stdout, "Control point Y increased, now is %2f\n", controlPoints[selectedPoint].y); break;
-	case 'o':case 'O': deltaZ -= offset;
-		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		fprintf(stdout, "Control point Z decreased, now is %2f\n", controlPoints[selectedPoint].z); break;
-	case 'p':case 'P': deltaZ += offset;
-		controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		fprintf(stdout, "Control point Z increased, now is %2f\n", controlPoints[selectedPoint].z); break;
-	
-		/*if (deltaX != 0 || deltaY != 0 || deltaZ != 0) {
-			controlPoints[selectedPoint] += vec3(deltaX, deltaY, deltaZ);
-		}*/
-
-		// select control points
-	case 'h':case 'H': 
-		// reset the previous control point color
-		resetControlPoint(selectedPoint);
-
-		selectedPoint += 1;
-		if (selectedPoint > controlPoints.size() - 1) {
-			selectedPoint = 0;
-		}
-		
-		selectControlPoint(selectedPoint);
-		fprintf(stdout, "Control point %d selected \n", selectedPoint); break;
-
-		// decrease Bezir patch resolution		
-	case 'k':case 'K': resolution -= 1;
-		if (resolution <= 1) {
-			resolution = 2;
-		}
-		
-		fprintf(stdout, "Bezir patch resolution decrease to %d\n", resolution); break;
-		// increase Bezir patch resolution
-	case 'l':case 'L': resolution += 1; 
-		if (resolution > 20) {
-			resolution = 20;
-			fprintf(stdout, "Stop pressing, large resolution will crash your computer \n", resolution); break;
-		}
-		//constructMesh(controlPoints, resolution, mesh);
-		fprintf(stdout, "Bezir patch resolution increase to %d\n", resolution); break;
 
 
-	//	// reset transformations
-	//case 'R': case 'r': resetTransformation(); fprintf(stdout, "Transformations reseted\n"); break;
+	//	// reset camera view and projection
+	case 'R': case 'r': 
+		camera.reset(); 
+		camRadius = 6.0;
+		camY = 0.0;
+		fprintf(stdout, "Camera reseted\n"); break;
 
 		// stop animation
 	case ' ': stopAnimation = !stopAnimation; break;
@@ -872,12 +819,20 @@ void initModel(){
 
 	loadSFM(bounnyPath, bunny.mesh);
 	initMesh(bunny);
+	bunny.objectColor[ORIGINAL] = color3(1.0, 0.0, 0.0);
+	bunny.objectColor[PICKED] = color3(1.0, 1.0, 0.0);
+	bunny.translate(3.0, -1.0, -2.0);
 
 	loadSFM(icosPath, icos.mesh);
 	initMesh(icos);
+	icos.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
+	icos.objectColor[PICKED] = color3(0.0, 1.0, 1.0);
+	icos.translate(0.0, 2.0, 0.5);
 
 	loadSFM(octahedronPath, octahedron.mesh);
 	initMesh(octahedron);
+	octahedron.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
+	octahedron.objectColor[PICKED] = color3(1.0, 0.0, 1.0);
 
 }
 
