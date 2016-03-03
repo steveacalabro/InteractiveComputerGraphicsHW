@@ -8,6 +8,7 @@ varying vec4 vViewDir;
 //varying int v_material;
 uniform int u_shadingModel;
 uniform int u_material;
+uniform vec3 u_Color;
 // defined in view space
 
 struct Fragment{
@@ -61,7 +62,8 @@ void main()
 
 		Material metal, plastic, gold, material;
 		// metal material
-		metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
+		//metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
+		metal.kd = vec4(u_Color, 1.0);
 		metal.ks = vec4(1.0, 1.0, 1.0, 1.0);
 		metal.ka = vec4(0.1, 0.1, 0.1, 1.0);
 		metal.shininess =  150.0;
@@ -103,6 +105,7 @@ void main()
 		vec4 color1 = PhongColor(light1, material, fragment);
 
 		fragColor = clamp(color1 + color0, 0.0, 1.0);
+		fragColor = clamp(color1, 0.0, 1.0);
 	}
 	else{
 		fragColor = vColor;

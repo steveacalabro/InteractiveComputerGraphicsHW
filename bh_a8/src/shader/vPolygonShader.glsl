@@ -10,7 +10,7 @@ uniform mat4 u_MV;
 
 uniform vec4 u_lightPos;
 uniform int u_material;
-
+uniform vec3 u_Color;
 uniform int u_shadingModel;
 
 // defined in view space
@@ -85,7 +85,8 @@ void main()
 
 	Material metal, plastic, gold, material;
 	// metal material
-	metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
+	//metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
+	metal.kd = vec4(u_Color, 1.0);
 	metal.ks = vec4(1.0, 1.0, 1.0, 1.0);
 	metal.ka = vec4(0.1, 0.1, 0.1, 1.0);
 	metal.shininess =  150.0;
@@ -126,6 +127,7 @@ void main()
 	vec4 color1 = GouraudColor(light1, material, vertex);
 
 	vColor = clamp(color1 + color0, 0.0, 1.0);
+	vColor = clamp(color1, 0.0, 1.0);
 
 
 
@@ -140,6 +142,7 @@ void main()
 
 
 	// flat shading
+	//! somehow flat shading normal is negative to Gouraud or Phong shading
 	if(u_shadingModel == FLAT)
 	{
 		// coord and normal in view space
@@ -147,12 +150,13 @@ void main()
 		positionViewSpace = u_MV * vec4(aCenterOfMass, 1.0);
 
 		vertex.position = positionViewSpace;
-		vertex.normal = vec4(normalize(normalViewSpace).xyz, 0.0);
+		vertex.normal = -vec4(normalize(normalViewSpace).xyz, 0.0);
 		
 		color0 = diffuseColor(light0, material, vertex);
 		color1 = diffuseColor(light1, material, vertex);
 
 		vColor = clamp(color1 + color0, 0.0, 1.0);	
+		vColor = clamp(color1, 0.0, 1.0);	
 	}
 }
 
