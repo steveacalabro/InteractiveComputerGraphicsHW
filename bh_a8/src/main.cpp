@@ -184,6 +184,7 @@ void initShaderProgram(void)
 #ifdef __linux__ 
 	program.lineShader = InitShader("./shader/vLineShader.glsl", "./shader/fLineShader.glsl");
 	program.polygonShader = InitShader("./shader/vPolygonShader.glsl", "./shader/fPolygonShader.glsl");
+	program.pickingShader = InitShader("./shader/vPickingShader.glsl", "./shader/fPickingShader.glsl");
 #elif _WIN32
 	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
 	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
@@ -895,16 +896,15 @@ void initModel(){
 	glUseProgram(program.polygonShader);
 
 	#ifdef __linux__ 
-		char* filePath = "./resources/dragon-50000.smf";
-		//int ifSuccess = loadSFM(filePath, mesh);
-		//char* filePath = "./resources/bezier_control_points.txt";
+		char* bounnyPath = "./resources/bound-bunny_1k.smf";
+		char* icosPath = "./resources/icos.smf";
+		char* octahedronPath = "./resources/octahedron.smf";
 	#elif _WIN32
 		
 		char* bounnyPath = "..\\src\\resources\\bound-bunny_1k.smf";
 		char* icosPath = "..\\src\\resources\\icos.smf";
 		char* octahedronPath = "..\\src\\resources\\octahedron.smf";
-		//int ifSuccess = loadSFM(filePath, mesh);
-		//char* filePath = "..\\src\\resources\\bezier_control_points.txt";			
+		
 	#endif
 
 	loadSFM(bounnyPath, bunny.mesh);
@@ -1016,27 +1016,16 @@ void printInstructions()
 	fprintf(stdout, "***************************** Instructions *********************************** \n");
 
 
+	int item = 1;
+	fprintf(stdout, "%d. Press 'W', 'S' for increasing and decreasing the camera's Y position \n", item); item++;
+	fprintf(stdout, "%d. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n", item); item++;
+	fprintf(stdout, "%d. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n", item); item++;
+	fprintf(stdout, "%d. Press 'R' to reset camera \n", item); item++;
+	fprintf(stdout, "%d. Press 'SPACE' to pause/resume animationn \n", item); item++;
 
-	fprintf(stdout, "1. Press 'W', 'S' for increasing and decreasing the camera's Y position \n");
-	fprintf(stdout, "2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n");
-	fprintf(stdout, "3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n");
-
-	fprintf(stdout, "4. Press 'Z', 'X' to increasing and decreasing the light's rotation raidus \n");
-	fprintf(stdout, "5. Press 'C', 'V' to increasing and decreasing the light's Y position \n");
-	fprintf(stdout, "6. Press 'B', 'N' to increasing and decreasing the light's rotation anglen \n");
-	fprintf(stdout, "7. Press 'SPACE' to pause/resume animationn \n");
-
-	fprintf(stdout, "8. Press 'H' to select the next control point \n");
-	fprintf(stdout, "9. Press 'T', 'Y' to increasing and decreasing the control point's X \n");
-	fprintf(stdout, "10. Press 'U', 'I' to increasing and decreasing the control point's Y \n");
-	fprintf(stdout, "10. Press 'O', 'P' to increasing and decreasing the control point's Z \n");
-
-	
-	fprintf(stdout, "11. Press 'K', 'L' to increasing and decreasing the sampling of the patch  \n");
-
-
-	fprintf(stdout, "13. Use mouse right click to change camera's projection mode, material and shading model\n");
-	fprintf(stdout, "14. Press 'ESC' to exit program \n");
+	fprintf(stdout, "%d. Use mouse left click to select object\n", item); item++;
+	fprintf(stdout, "%d. Use mouse right click to change camera's projection mode and shading model\n", item); item++;
+	fprintf(stdout, "%d. Press 'ESC' to exit program \n", item); item++;
 
 }
 
