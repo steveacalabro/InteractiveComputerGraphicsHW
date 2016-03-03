@@ -11,6 +11,13 @@
 #include <string>
 using namespace std;
 
+typedef vec3 point3;
+typedef vec3 color3;
+typedef vec4 point4;
+typedef vec4 color4;
+
+
+
 // 3D triangle, each triangle has 3 vertices and 3 normals
 struct Triangle3D
 {
@@ -36,7 +43,15 @@ struct VertexArrayObject
 
 enum ObjectColorIndex
 {
-	ORIGINAL, PICKED
+	ORIGINAL, PICKED, RENDER
+};
+
+struct Material {
+	// absobtion coefficients
+	color4 kd;
+	color4 ks;
+	color4 ka;
+	float shininess;
 };
 
 class MeshObject {
@@ -45,8 +60,10 @@ public:
 	Mesh mesh;
 
 	VertexArrayObject vao;
+	VertexArrayObject pickingVao;
 
-	color3 objectColor[2];
+	color3 objectColor[3];
+	Material material;
 	// transformation matrices
 	mat4 scaleMatrix = Angel::identity();
 	mat4 rotationMatrix = Angel::identity();

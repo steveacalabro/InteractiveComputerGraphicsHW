@@ -12,10 +12,6 @@
 
 using namespace std;
 
-typedef vec3 point3;
-typedef vec3 color3;
-typedef vec4 point4;
-typedef vec4 color4;
 
 
 struct IndexBufferObject
@@ -28,6 +24,7 @@ struct Program
 {
 	GLuint lineShader;
 	GLuint polygonShader;
+	GLuint pickingShader;
 };
 
 
@@ -56,7 +53,7 @@ void selectControlPoint(int selectedPoint);
 void resetControlPoint(int selectedPoint);
 void initControlPoints();
 void displayMainWindow(void);
-void renderMeshObject(MeshObject &meshObject);
+void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram);
 
 void projectionMenu(int option);
 void createAnimationMenus();
