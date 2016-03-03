@@ -15,6 +15,13 @@ Program program;
 // global vertex array object
 GLuint vao, axisVao, controlPointsVao;
 
+// global frame buffer object
+GLuint fbo;
+
+// global render buffer object
+GLuint colorRBO, depthRBO;
+
+
 // Bezir curve control points
 vector<point3> controlPoints;
 vector<point3> controlColors;
@@ -57,7 +64,7 @@ enum {METAL, PLASTIC, GOLD };
 enum { GOURAUD, PHONG, FLAT};
 
 int materialOption{ METAL };
-int shaderOption{ FLAT };
+int shaderOption{ PHONG };
 
 
 
@@ -180,6 +187,7 @@ void initShaderProgram(void)
 #elif _WIN32
 	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
 	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
+	program.pickingShader = InitShader("..\\src\\shader\\vPickingShader.glsl", "..\\src\\shader\\fPickingShader.glsl");
 	
 #endif
 
@@ -192,51 +200,57 @@ void initShaderProgram(void)
 
 
 //----------------------------------------------------------------------------
-void renderMeshObject(MeshObject &meshObject) {
-	glUseProgram(program.polygonShader);
+void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.polygonShader) {
+	glUseProgram(shaderProgram);
 	
 	mat4 &scaleMatrix = meshObject.scaleMatrix;
+
 	GLuint &vao = meshObject.vao.id;
+	GLuint &pickingVao = meshObject.pickingVao.id;
+	vec3 orgSurfaceColor = meshObject.objectColor[RENDER];
+
 	Mesh &mesh = meshObject.mesh;
 	mat4 &translationMatrix = meshObject.translationMatrix;
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
 
 	// send model view projection matrix to shader
-	GLuint u_MVP = glGetUniformLocation(program.polygonShader, "u_MVP");
+	GLuint u_MVP = glGetUniformLocation(shaderProgram, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 	// send model view matrix to shader
 	mat4 MV = camera.viewMatrix * scene.compositeMatrix * scaleMatrix;
-	GLuint u_MV = glGetUniformLocation(program.polygonShader, "u_MV");
+	GLuint u_MV = glGetUniformLocation(shaderProgram, "u_MV");
 	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
 
-
-	// send light position to shader
-	vec4 lightPos = vec4(lightX, lightY, lightZ, 1.0);
-	GLuint u_lightPos = glGetUniformLocation(program.polygonShader, "u_lightPos");
-	glUniform4fv(u_lightPos, 1, lightPos); // mat.h is row major, so use GL_TRUE to transpsoe t
-
-
-	// send material option to shader
-	GLuint u_material = glGetUniformLocation(program.polygonShader, "u_material");
-	glUniform1i(u_material, materialOption);
-
-	// send shader option to shader
-	GLuint u_shadingModel = glGetUniformLocation(program.polygonShader, "u_shadingModel");
-	glUniform1i(u_shadingModel, shaderOption);
-
-	// bind vertex array object
-	//glBindVertexArray(ColorCube.vao.id);
-
-	/*glBindBuffer(GL_VERTEX_ARRAY, ColorCube.vao.vertVBO);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ColorCube.vao.EBO);
-	*/
-	//glDrawElements(GL_TRIANGLES, ColorCube.NUM_FACES*3, GL_UNSIGNED_INT, 0); // Draw the cube's faces
-	//glDrawArrays(GL_TRIANGLES, 0, ColorCube.NUM_VERTS*3); // Draw the cube's faces
+	if (shaderProgram == program.polygonShader) {	
+		// send light position to shader
+		vec4 lightPos = vec4(lightX, lightY, lightZ, 1.0);
+		GLuint u_lightPos = glGetUniformLocation(shaderProgram, "u_lightPos");
+		glUniform4fv(u_lightPos, 1, lightPos); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 
-	glBindVertexArray(vao);
+		// send material option to shader
+		GLuint u_material = glGetUniformLocation(shaderProgram, "u_material");
+		glUniform1i(u_material, materialOption);
+
+		// send object original surface color to shader
+		GLuint u_Color = glGetUniformLocation(shaderProgram, "u_Color");
+		glUniform3fv(u_Color, 1, orgSurfaceColor);
+
+		// send shader option to shader
+		GLuint u_shadingModel = glGetUniformLocation(shaderProgram, "u_shadingModel");
+		glUniform1i(u_shadingModel, shaderOption);
+		glBindVertexArray(vao);
+	}
+	else if (shaderProgram == program.pickingShader) {
+		glBindVertexArray(pickingVao);
+
+		// send object original surface color to shader
+		GLuint u_Color = glGetUniformLocation(shaderProgram, "u_Color");
+		glUniform3fv(u_Color, 1, meshObject.objectColor[ORIGINAL]);
+	}
+
+	
 	glDrawArrays(GL_TRIANGLES, 0, mesh.size() * 3);
 
 }
@@ -303,26 +317,39 @@ void updateScene() {
 	lightZ = rotationCenterZ + lightRadius*sin(DegreesToRadians * lightAngle);
 }
 
+void renderToBackBuffer() {
+	//Bind 0, which means render to back buffer
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	renderMeshObject(bunny);
+	renderMeshObject(icos);
+	renderMeshObject(octahedron);
+	renderAxis();
+}
+
+void renderToPickingBuffer() {
+	//and now you can render to the FBO (also called RenderBuffer)
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	//glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, 500, 500);
+
+	renderMeshObject(bunny, program.pickingShader);
+	renderMeshObject(icos, program.pickingShader);
+	renderMeshObject(octahedron, program.pickingShader);
+
+}
 
 void render() {
 
 	updateScene();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//mesh.clear();
-	//constructMesh(controlPoints, resolution, mesh);
-	//initMesh();
-	renderMeshObject(bunny);
-	renderMeshObject(icos);
-	renderMeshObject(octahedron);
-	//glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_BLEND);
-
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	renderAxis();
-
-	//rendeControlPoints();
+	renderToPickingBuffer();
+	renderToBackBuffer();
 
 }
+
+
 
 void displayMainWindow(void)
 {
@@ -422,8 +449,8 @@ void createAnimationMenus() {
 	// material
 	materialSubMenue = glutCreateMenu(materialMenue);
 	glutAddMenuEntry("Metal", METAL);
-	glutAddMenuEntry("Plastic", PLASTIC);
-	glutAddMenuEntry("Gold ", GOLD);
+	//glutAddMenuEntry("Plastic", PLASTIC);
+	//glutAddMenuEntry("Gold ", GOLD);
 
 
 	// shading model
@@ -447,6 +474,48 @@ void createAnimationMenus() {
 //void resetTransformation() {
 //	ColorCube.setIdentity();
 //}
+void myMouse(GLint button, GLint state, GLint x, GLint y) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) 
+	{
+		vector<GLubyte> pixels(4);
+
+		// Set up to read from the renderbuffer
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+		// here the x, y are in image space where the origin is at the lower left corner
+		//! GL_RGBA8 returns zeros somehow
+		glReadPixels(x, 500-y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
+
+		// if hit bunny
+		if (pixels[0] == 255) {
+			bunny.objectColor[RENDER] = bunny.objectColor[PICKED];
+			icos.objectColor[RENDER] = icos.objectColor[ORIGINAL];
+			octahedron.objectColor[RENDER] = octahedron.objectColor[ORIGINAL];
+		}
+		// if hit icos
+		else if (pixels[1] == 255) {
+			icos.objectColor[RENDER] = icos.objectColor[PICKED];
+			bunny.objectColor[RENDER] = bunny.objectColor[ORIGINAL];
+			octahedron.objectColor[RENDER] = octahedron.objectColor[ORIGINAL];
+		}
+		// if hit octahedron
+		else if (pixels[2] == 255) {
+			octahedron.objectColor[RENDER] = bunny.objectColor[PICKED];
+			bunny.objectColor[RENDER] = bunny.objectColor[ORIGINAL];
+			icos.objectColor[RENDER] = icos.objectColor[ORIGINAL];			
+		}
+		// if hit the background
+		else
+		{
+			bunny.objectColor[RENDER] = bunny.objectColor[ORIGINAL];
+			icos.objectColor[RENDER] = icos.objectColor[ORIGINAL];
+			octahedron.objectColor[RENDER] = octahedron.objectColor[ORIGINAL];
+		}
+	}
+
+}
+
 
 void myKeyboard(unsigned char key, int x, int y)
 {
@@ -794,6 +863,27 @@ void initMesh(MeshObject &meshObject) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+
+
+	/************************* For picking render buffer ***********************************/
+	// create vao for picking buffer
+	glGenVertexArrays(1, &meshObject.pickingVao.id);
+	glBindVertexArray(meshObject.pickingVao.id);
+
+	// Create and initialize a buffer object
+	GLuint vertexBuffer;
+	glGenBuffers(1, &vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
+	// total buffer size
+	glBufferData(GL_ARRAY_BUFFER, sizePoints, points, GL_STATIC_DRAW);
+
+	// set up vertex buffer pointers
+	aPosition = glGetAttribLocation(program.pickingShader, "aPosition");
+	glEnableVertexAttribArray(aPosition);
+	glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+
+
 	// delete dynamic array pointers
 	delete[] points;
 	delete[] normals;
@@ -820,19 +910,23 @@ void initModel(){
 	loadSFM(bounnyPath, bunny.mesh);
 	initMesh(bunny);
 	bunny.objectColor[ORIGINAL] = color3(1.0, 0.0, 0.0);
-	bunny.objectColor[PICKED] = color3(1.0, 1.0, 0.0);
-	bunny.translate(3.0, -1.0, -2.0);
+	bunny.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
+	bunny.objectColor[RENDER] = bunny.objectColor[ORIGINAL];
+	//bunny.material.kd = bunny.objectColor[RENDER];
+	bunny.translate(1.0, -1.0, -2.0);
 
 	loadSFM(icosPath, icos.mesh);
 	initMesh(icos);
 	icos.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
-	icos.objectColor[PICKED] = color3(0.0, 1.0, 1.0);
+	icos.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
+	icos.objectColor[RENDER] = icos.objectColor[ORIGINAL];
 	icos.translate(0.0, 2.0, 0.5);
 
 	loadSFM(octahedronPath, octahedron.mesh);
 	initMesh(octahedron);
 	octahedron.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
-	octahedron.objectColor[PICKED] = color3(1.0, 0.0, 1.0);
+	octahedron.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
+	octahedron.objectColor[RENDER] = octahedron.objectColor[ORIGINAL];
 
 }
 
@@ -947,6 +1041,42 @@ void printInstructions()
 }
 
 
+void initPickingFBO() {
+	//RGBA8 RenderBuffer, 24 bit depth RenderBuffer, 256x256
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	//Create and attach a color buffer for picking
+	glGenRenderbuffers(1, &colorRBO);
+
+	//We must bind color_rb before we call glRenderbufferStorage
+	glBindRenderbuffer(GL_RENDERBUFFER, colorRBO);
+
+	//The storage format is RGBA8
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, 500, 500);
+
+	//Attach color buffer to FBO
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_RENDERBUFFER, colorRBO);
+
+	//------------------------- depth buffer object --------------------------//
+	glGenRenderbuffers(1, &depthRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 500, 500);
+
+	//-------------------------
+	//Attach depth buffer to FBO
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+		GL_RENDERBUFFER, depthRBO);
+
+	glEnable(GL_DEPTH_TEST);
+
+
+
+
+
+}
+
 void initScene() {
 	printInstructions();
 
@@ -955,6 +1085,8 @@ void initScene() {
 	//initControlPoints();
 
 	initCamera(camera, PERSPECTIVE);
+
+	initPickingFBO();
 	// init color cube
 	//initColorCube();
 	//ColorCube.init(program);
@@ -973,7 +1105,7 @@ int main(int argc, char **argv)
 	mainWindow = createOpenGLContext("ICG HW8 - Picking", 200, 0, 500, 500);
 
 	glEnable(GL_DEPTH_TEST); //! Depth test must be enabled after the glewInit(), or it doesn't work
-	assignGlutFunctions(displayMainWindow, myKeyboard, nullptr, nullptr, nullptr, myIdle, createAnimationMenus);
+	assignGlutFunctions(displayMainWindow, myKeyboard, myMouse, nullptr, nullptr, myIdle, createAnimationMenus);
 	initScene();
 
 	glutMainLoop();
