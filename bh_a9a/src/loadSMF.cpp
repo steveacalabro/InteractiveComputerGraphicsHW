@@ -205,8 +205,8 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 	averageNormals(vertices, faces, normals);
 
 	// export to smf file
-	string outputSMF = "..\\src\\resources\\bezierPatch.obj";
-	exportSMF(outputSMF, vertices, faces, normals);
+	// string outputSMF = "..\\src\\resources\\bezierPatch.obj";
+	// exportSMF(outputSMF, vertices, faces, normals);
 
 
 	Plane temp;
