@@ -232,7 +232,6 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 }
 
 
-
 vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints, const int &resolution) {
 
 	
@@ -271,10 +270,11 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 				}
 			}			
 
-			curveVerts.push_back(interpolatedPoint);
-			//interpolatedPoint = point3(0.0, 0.0, 0.0);
 
-			if (v == 1.0) {
+			curveVerts.push_back(interpolatedPoint);
+
+
+			if (abs(v - 1.0) < 0.001) {
 				break;
 			}
 
@@ -286,7 +286,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 
 		patchVerts.push_back(curveVerts);
 
-		if (u == 1.0) {
+		if (abs(u - 1.0) < 0.001) {
 			break;
 		}
 
@@ -301,7 +301,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 	
 }
 
-void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals) {
+void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals, vector<vec2> &texCoord) {
 
 	int uLength = patchPoints.size();
 	int vLength = patchPoints[0].size();
@@ -309,6 +309,7 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 		for (int v = 0; v < vLength; v++) {
 			vertices.push_back(patchPoints[u][v]);
 			normals.push_back(vec3(0.0));
+			texCoord.push_back(vec2(u / float(uLength), v/ float(vLength)));
 
 			if (u < uLength - 1 && v < vLength - 1) {
 				//! smf index starts from 1 instead of 0, so need to +1
@@ -326,7 +327,7 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 }
 
 
-void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces) {
+void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces, const vector<point3> &normals) {
 	
 	ofstream File;
 	File.open(fileName);
@@ -338,8 +339,13 @@ void exportSMF(string fileName, const vector<point3> &vertices, const vector<poi
 	{
 		File << "v" << "  " << vertices[i].x << " " << vertices[i].y << " " << vertices[i].z << endl;
 	}
+
+	for (int i = 0; i < normals.size(); i++) //Write normals
+	{
+		File << "n" << "  " << normals[i].x << " " << normals[i].y << " " << normals[i].z << endl;
+	}
 	
-	for (int i = 0; i < faces.size(); i++) //Write vertices
+	for (int i = 0; i < faces.size(); i++) //Write faces
 	{
 		File << "f" << "  " << faces[i].x << " " << faces[i].y << " " << faces[i].z << endl;
 	}
