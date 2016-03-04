@@ -13,7 +13,7 @@ using namespace std;
 
 
 void averageNormals(vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals) {
-	// for Gourau shading
+	// for Gouraud and Phong shading
 	Plane plane;
 	vector<vec3> faceNormals;
 	for (int i = 0; i < faces.size(); i++) {
@@ -34,8 +34,16 @@ void averageNormals(vector<point3> &vertices, vector<point3> &faces, vector<vec3
 				numOfShares++;
 			}
 		}
+		
 		normals[i] /= numOfShares;
-		normals[i] = normalize(normals[i]);
+		if (length(normals[i]) > 0) {
+			normals[i] = normalize(normals[i]);
+		}
+		else
+		{
+			cerr << "normal length is negative or zero!\n" << endl;
+		}
+
 	}
 }
 
@@ -79,7 +87,7 @@ int loadSFM(char* fileName, Mesh &mesh) {
 		}
 
 		if (triangleElement.size() != 3) {
-			fprintf(stdout, "Only read %d elements from current line \n", triangleElement.size());
+			fprintf(stdout, "Only read %llu elements from current line \n", triangleElement.size());
 			return 0;
 		}
 
@@ -166,7 +174,7 @@ int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints) {
 		}
 
 		if (coord.size() != 3) {
-			fprintf(stdout, "Only read %d elements from current line \n", coord.size());
+			fprintf(stdout, "Only read %llu elements from current line \n", coord.size());
 			return 0;
 		}
 		else {
@@ -186,18 +194,20 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 	vector<point3> vertices;
 	vector<vec3>   normals;
 	vector<point3> faces;
+	vector<vec2> texCoord;
 
 	meshVerts = interpolateBezirPatch(controlPoints, resolution);
 
-	tessellate(meshVerts, vertices, faces, normals);
-
-	// export to smf file
-	/*string outputSMF = "..\\src\\resources\\bezierPatch.obj";
-	exportSMF(outputSMF, vertices, faces);*/
+	tessellate(meshVerts, vertices, faces, normals, texCoord);
 
 
 	// calculate the average normals for shanding
 	averageNormals(vertices, faces, normals);
+
+	// export to smf file
+	string outputSMF = "..\\src\\resources\\bezierPatch.obj";
+	exportSMF(outputSMF, vertices, faces, normals);
+
 
 	Plane temp;
 
@@ -218,6 +228,10 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 		facet.normals[1] = normals[facet.faces[1]];
 		facet.normals[2] = normals[facet.faces[2]];
 
+
+		facet.texCoord[0] = texCoord[facet.faces[0]];
+		facet.texCoord[1] = texCoord[facet.faces[1]];
+		facet.texCoord[2] = texCoord[facet.faces[2]];
 
 		temp.set3Points(facet.vertices[0], facet.vertices[1], facet.vertices[2]); // in this case clock wise is normal direction
 
@@ -268,10 +282,11 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 				}
 			}			
 
-			curveVerts.push_back(interpolatedPoint);
-			//interpolatedPoint = point3(0.0, 0.0, 0.0);
 
-			if (v == 1.0) {
+			curveVerts.push_back(interpolatedPoint);
+
+
+			if (abs(v - 1.0) < 0.001) {
 				break;
 			}
 
@@ -283,7 +298,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 
 		patchVerts.push_back(curveVerts);
 
-		if (u == 1.0) {
+		if (abs(u - 1.0) < 0.001) {
 			break;
 		}
 
@@ -298,7 +313,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 	
 }
 
-void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals) {
+void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals, vector<vec2> &texCoord) {
 
 	int uLength = patchPoints.size();
 	int vLength = patchPoints[0].size();
@@ -306,6 +321,7 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 		for (int v = 0; v < vLength; v++) {
 			vertices.push_back(patchPoints[u][v]);
 			normals.push_back(vec3(0.0));
+			texCoord.push_back(vec2(u / float(uLength), v/ float(vLength)));
 
 			if (u < uLength - 1 && v < vLength - 1) {
 				//! smf index starts from 1 instead of 0, so need to +1
@@ -323,7 +339,7 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 }
 
 
-void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces) {
+void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces, const vector<point3> &normals) {
 	
 	ofstream File;
 	File.open(fileName);
@@ -335,8 +351,13 @@ void exportSMF(string fileName, const vector<point3> &vertices, const vector<poi
 	{
 		File << "v" << "  " << vertices[i].x << " " << vertices[i].y << " " << vertices[i].z << endl;
 	}
+
+	for (int i = 0; i < normals.size(); i++) //Write normals
+	{
+		File << "n" << "  " << normals[i].x << " " << normals[i].y << " " << normals[i].z << endl;
+	}
 	
-	for (int i = 0; i < faces.size(); i++) //Write vertices
+	for (int i = 0; i < faces.size(); i++) //Write faces
 	{
 		File << "f" << "  " << faces[i].x << " " << faces[i].y << " " << faces[i].z << endl;
 	}
