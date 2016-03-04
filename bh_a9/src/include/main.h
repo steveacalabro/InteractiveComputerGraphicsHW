@@ -5,25 +5,12 @@
 //#include "BoxGeometry.h"
 #include "Camera.h"
 #include "Scene.h"
-
 #include <vector>
 #include <iostream>
-#include <fstream>
+#include "MeshObject.h"
 
+enum class VBO_OPTION;
 using namespace std;
-
-typedef vec3 point3;
-typedef vec3 color3;
-typedef vec4 point4;
-typedef vec4 color4;
-
-struct VertexArrayObject
-{
-	GLuint id;
-	GLuint vertVBO;
-	//GLuint colorVBO;
-	GLuint EBO;
-};
 
 struct IndexBufferObject
 {
@@ -37,29 +24,6 @@ struct Program
 	GLuint polygonShader;
 };
 
-// 3D triangle, each triangle has 3 vertices and 3 normals
-struct Triangle3D
-{
-	int faces[3]; // face id in SMF model
-	vec3 vertices[3]; // 3 vertex coord
-	vec3 normals[3]; // 3 normal 
-	vec3 triangleNormal; // the normal of the triangle plane
-	vec3 centerOfMass;
-	
-};
-
-
-struct GeometryMat {
-	mat4 x;
-	mat4 y;
-	mat4 z;
-};
-
-// a mesh is a seris of 3d triangles
-typedef vector<Triangle3D> Mesh;
-
-
-
 template <typename T>
 GLuint initEBO(const T *indices, const int numElements, const bool isDynamic);
 
@@ -71,7 +35,7 @@ VertexArrayObject initVAO(const GLuint program, const T1 *verts, const T2 *indic
 
 
 template <typename T>
-void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, const int whichVBO);
+void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, VBO_OPTION whichVBO);
 
 void initShaderProgram(void);
 
@@ -95,10 +59,11 @@ void initCamera(Camera &camera, bool usePerspective);
 void setCamProjection(Camera &camera, int option);
 void initScene();
 
+void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals, vector<vec2> &texCoord);
 int loadSFM(char* fileName, Mesh &mesh);
 int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints);
 vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints, const int &resolution);
-void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals);
 void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh);
-void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces);
+void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces, const vector<point3> &normals);
+void initTexture();
 #endif

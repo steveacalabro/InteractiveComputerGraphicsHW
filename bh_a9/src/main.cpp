@@ -1,7 +1,7 @@
 ﻿// HW6
 #include "main.h"
 #include "BoxGeometry.h"
-#include "MeshObject.h"
+
 using namespace std;
 
 
@@ -38,9 +38,6 @@ Camera camera;
 Scene scene;
 Mesh mesh;
 
-//const int NUM_FACES{1000};
-
-
 const int NumVertices = 36;
 color4 colors[NumVertices];
 point4 points[NumVertices];
@@ -63,71 +60,6 @@ enum { GOURAUD, PHONG, FLAT};
 
 int materialOption{ METAL };
 int shaderOption{ FLAT };
-// quad generates two triangles for each face and assigns colors
-// to the vertices
-
-int Index = 0;
-
-void quad(int a, int b, int c, int d)
-{
-	// triangle 1
-	colors[Index] = ColorCube.vertex_colors[a]; points[Index] = ColorCube.vertices[a]; Index++;
-	colors[Index] = ColorCube.vertex_colors[b]; points[Index] = ColorCube.vertices[b]; Index++;
-	colors[Index] = ColorCube.vertex_colors[c]; points[Index] = ColorCube.vertices[c]; Index++;
-
-	// triangle 2
-	colors[Index] = ColorCube.vertex_colors[a]; points[Index] = ColorCube.vertices[a]; Index++;
-	colors[Index] = ColorCube.vertex_colors[c]; points[Index] = ColorCube.vertices[c]; Index++;
-	colors[Index] = ColorCube.vertex_colors[d]; points[Index] = ColorCube.vertices[d]; Index++;
-}
-
-// generate 12 triangles: 36 vertices and 36 colors
-void colorCube()
-{
-	quad(1, 0, 3, 2);
-	quad(2, 3, 7, 6);
-	quad(3, 0, 4, 7);
-	quad(6, 5, 1, 2);
-	quad(4, 5, 6, 7);
-	quad(5, 4, 0, 1);
-}
-
-
-void initColorCube()
-{
-	colorCube();
-	// Create a vertex array object
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	// Create and initialize a buffer object
-	GLuint buffer;
-	glGenBuffers(1, &buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points) +
-		sizeof(colors), NULL, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0,
-		sizeof(points), points);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points),
-		sizeof(colors), colors);
-
-	glUseProgram(program.polygonShader);
-
-	// set up vertex arrays
-	GLuint vPosition = glGetAttribLocation(program.polygonShader, "vPosition");
-	glEnableVertexAttribArray(vPosition);
-	glVertexAttribPointer(vPosition, 4, GL_FLOAT, GL_FALSE, 0,
-		BUFFER_OFFSET(0));
-	GLuint aColor = glGetAttribLocation(program.polygonShader, "aColor");
-	glEnableVertexAttribArray(aColor);
-	glVertexAttribPointer(aColor, 4, GL_FLOAT, GL_FALSE, 0,
-		BUFFER_OFFSET(sizeof(points)));
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//thetaLoc = glGetUniformLocation(program, "theta");
-}
-
-
 
 
 template <typename T>
@@ -239,7 +171,6 @@ void updateVAO(VertexArrayObject &VAO, const T *vertData, const int numPoints, V
 
 
 
-
 void initShaderProgram(void)
 {
 	// Load shaders and use the resulting shader program based on the OS
@@ -267,7 +198,7 @@ void renderPolygon() {
 
 
 	mat4 scaleMatrix = Scale(0.5, 0.5, 0.5);
-	mat4 translationMatrix = Angel::Translate(-2.0, -2.0, 0.0);
+	mat4 translationMatrix = Translate(-2.0, -2.0, 0.0);
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
 
 	// send model view projection matrix to shader
@@ -314,7 +245,7 @@ void renderAxis() {
 	glUseProgram(program.lineShader);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	mat4 scaleMatrix = Angel::Scale(2.0, 2.0, 2.0);
+	mat4 scaleMatrix = Scale(2.0, 2.0, 2.0);
 	
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix;
 
@@ -331,8 +262,8 @@ void renderAxis() {
 void rendeControlPoints() {
 	initControlPoints();
 
-	mat4 scaleMatrix = Angel::Scale(0.5, 0.5, 0.5);
-	mat4 translationMatrix = Angel::Translate(-2.0, -2.0, 0.0);
+	mat4 scaleMatrix = Scale(0.5, 0.5, 0.5);
+	mat4 translationMatrix = Translate(-2.0, -2.0, 0.0);
 	glUseProgram(program.lineShader);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
@@ -379,6 +310,7 @@ void render() {
 	updateScene();
 	mesh.clear();
 	constructMesh(controlPoints, resolution, mesh);
+	initTexture();
 	initMesh();
 	renderPolygon();
 	//glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -827,6 +759,39 @@ void initControlPoints()
 
 }
 
+void initTexture()
+{
+	GLubyte image[64][64][3];
+	// Create a 64 x 64 checkerboard pattern
+	for (int i = 0; i < 64; i++) {
+		for (int j = 0; j < 64; j++) {
+			GLubyte c = (((i & 0x8) == 0) ^ ((j & 0x8) == 0)) * 255;
+			image[i][j][0] = c;
+			image[i][j][1] = c;
+			image[i][j][2] = c;
+		}
+	}
+	
+	int TextureSize = 64;
+	GLuint textures[1];
+	glGenTextures(1, textures);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TextureSize,
+		TextureSize, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,		GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,		GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D,		GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D,		GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glActiveTexture(GL_TEXTURE0);
+
+
+	// Set the value of the fragment shader texture sampler variable
+	// ("texture") to the the appropriate texture unit. In this case,
+	// zero, for GL_TEXTURE0 which was previously set by calling
+	// glActiveTexture().
+	glUniform1i(glGetUniformLocation(program.polygonShader, "texture"), 0);
+}
+
 void initMesh() {
 	int meshLength = mesh.size();
 	int numVertPerTriangle = 3;
@@ -838,11 +803,13 @@ void initMesh() {
 	vec3* normals = new vec3[vertArrayLength];
 	vec3* triangleNormal = new vec3[vertArrayLength];
 	point3* centerOfMass = new point3[vertArrayLength];
+	vec2* texCoord = new vec2[vertArrayLength];
 
 	int sizePoints = vertArrayLength*sizeof(points[0]);
 	int sizeNormals = vertArrayLength*sizeof(normals[0]);
 	int sizeTriangleNormal = vertArrayLength*sizeof(triangleNormal[0]);
 	int sizeCenterOfMass = vertArrayLength* sizeof(centerOfMass[0]);
+	int sizeTexCoord = vertArrayLength* sizeof(texCoord[0]);
 
 
 	for (int i = 0; i < meshLength; i++) {
@@ -862,6 +829,10 @@ void initMesh() {
 		centerOfMass[3 * i] = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 1] = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 2] = mesh[i].centerOfMass;
+
+		texCoord[3 * i] = mesh[i].texCoord[0];
+		texCoord[3 * i + 1] = mesh[i].texCoord[1];
+		texCoord[3 * i + 2] = mesh[i].texCoord[2];
 	}
 
 	// Create a vertex array object
@@ -874,7 +845,7 @@ void initMesh() {
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
 	// total buffer size
-	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal + sizeTexCoord, NULL, GL_STATIC_DRAW);
 
 	// points
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizePoints, points);
@@ -887,6 +858,9 @@ void initMesh() {
 
 	// facet normal for flat shading 
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass, sizeTriangleNormal, triangleNormal);
+
+	// facet texture coord
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal, sizeTexCoord, texCoord);
 
 
 	// set up vertex buffer pointers
@@ -906,13 +880,20 @@ void initMesh() {
 	glEnableVertexAttribArray(aFlatNormal);
 	glVertexAttribPointer(aFlatNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals + sizeCenterOfMass));
 
+	GLuint aTexCoord = glGetAttribLocation(program.polygonShader, "aTexCoord");
+	glEnableVertexAttribArray(aTexCoord);
+	glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal));
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+
+	//initTexture();
 	// delete dynamic array pointers
 	delete[] points;
 	delete[] normals;
 	delete[] centerOfMass;
 	delete[] triangleNormal;
+	delete[] texCoord;
 }
 
 void initModel(){
@@ -1055,9 +1036,7 @@ void initScene() {
 	//initControlPoints();
 
 	initCamera(camera, PERSPECTIVE);
-	// init color cube
-	//initColorCube();
-	//ColorCube.init(program);
+
 }
 
 
@@ -1080,5 +1059,4 @@ int main(int argc, char **argv)
 	int k;
 	cin >> k;
 	return 0;
-
 }
