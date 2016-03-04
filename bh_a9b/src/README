@@ -1,0 +1,39 @@
+CS537 Homework Assignment 8: Picking
+Author: Bingyao Huang
+Date: 03/02/2016
+Language: C++
+
+
+
+This code loads and displays three smooth-shaded triangle-mesh objects. A light source is attached to the camera. The user is able to change the view of the geometric objects by mouse left click.
+When clicked the object's color should change. The scene can be viewed in 3 different projection modes (perspective, orthographic and parallel).
+
+
+A rotating camera view of the model is displayed. The camera rotates on a cylinder around the model. Allow the user to interactively change the height, the orbit radius and speed of the camera. The camera rotates around and look at the objects.
+
+***************************** Instructions *********************************** 
+1. Press 'W', 'S' for increasing and decreasing the camera's Y position
+2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus
+3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed
+4. Press 'R' to reset camera
+5. Press 'SPACE' to pause/resume animationn
+6. Use mouse left click to select object
+7. Use mouse right click to change camera's projection mode and shading model
+8. Press 'ESC' to exit program
+
+
+Contents:
+	source files: src\*.cpp
+	makefile: Makefile
+	library folder: include
+	
+
+Usage:	
+	make: the default target compiles all the code
+	make run: executes the program(s)
+	make clean: deletes all the object files and executable files.
+	
+	
+
+	
+
