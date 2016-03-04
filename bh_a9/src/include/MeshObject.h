@@ -13,32 +13,58 @@ using namespace std;
 
 typedef vec3 point3;
 typedef vec3 color3;
+typedef vec4 point4;
+typedef vec4 color4;
 
+
+
+// 3D triangle, each triangle has 3 vertices and 3 normals
+struct Triangle3D
+{
+	int faces[3]; // face id in SMF model
+	vec3 vertices[3]; // 3 vertex coord
+	vec3 normals[3]; // 3 normal 
+	vec3 triangleNormal; // the normal of the triangle plane
+	vec3 centerOfMass;
+	vec2 texCoord[3];
+
+};
+
+// a mesh is a seris of 3d triangles
+typedef vector<Triangle3D> Mesh;
+
+
+struct VertexArrayObject
+{
+	GLuint id;
+	GLuint vertVBO;
+	//GLuint colorVBO;
+	GLuint EBO;
+};
+
+enum ObjectColorIndex
+{
+	ORIGINAL, PICKED, RENDER
+};
+
+struct Material {
+	// absobtion coefficients
+	color4 kd;
+	color4 ks;
+	color4 ka;
+	float shininess;
+};
 
 class MeshObject {
 public:
-	static const int NUM_VERTS = 8;
-	static const int NUM_FACES = 12;
 
 	Mesh mesh;
-	// Vertices of a unit cube centered at origin
-	// sides aligned with axes
-	//vector<point3> vertices;
-	//vector<point3> normals;
-	//vector<point3> faces;
-
-	// RGBA colors of the vertices
-
-
 
 	VertexArrayObject vao;
+	VertexArrayObject pickingVao;
 
-	// vertices color
-	//float VertsColors[NUM_VERTS * 3] = { 1.0 };
-
-	// face indices
-
-
+	color3 objectColor[3];
+	Material material;
 	// transformation matrices
 	mat4 scaleMatrix = Angel::identity();
 	mat4 rotationMatrix = Angel::identity();
@@ -74,14 +100,6 @@ public:
 		compositeMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 	}
 
-	void computerNormals() {
-
-	}
-
-	//void init(GLuint program) {
-	//	// create vertex array object
-	//	vao = initVAO(program, this->vertices, this->faces, NUM_VERTS * 3, NUM_FACES * 3, false);
-	//}
 
 };
 #endif
