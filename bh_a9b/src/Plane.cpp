@@ -25,6 +25,10 @@ void Plane::set3Points(point3 p1, point3 p2, point3 p3) {
 	vec2 = p3 - p2;
 
 	this->normal = cross(vec2, vec1);
+	if(length(normal) <=0 )
+	{
+		cerr << "normal length is negative or zero!\n" << endl;
+	}
 	this->point = p2;
 	computeParameters();
 
