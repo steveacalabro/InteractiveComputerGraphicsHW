@@ -5,9 +5,13 @@ varying vec4 vColor;
 varying vec4 vLightDir[2];
 varying vec4 vNormal;
 varying vec4 vViewDir;
+varying vec2 vTexCoord;
 //varying int v_material;
 uniform int u_shadingModel;
 uniform int u_material;
+
+
+uniform sampler2D texture; //texture object id from application
 // defined in view space
 
 struct Fragment{
@@ -108,7 +112,11 @@ void main()
 		fragColor = vColor;
 	}
 
-	gl_FragColor = vec4(fragColor.rgb, 1.0);
+	//gl_FragColor = vec4(fragColor.rgb, 1.0);
+
+	gl_FragColor = vec4(fragColor.xyz * texture2D( texture, vTexCoord ).xyz, 1.0);
+	//gl_FragColor = vec4(texture2D( texture, vTexCoord ).xyz, 1.0);
+	//gl_FragColor = vec4(vTexCoord, 0.0, 1.0);
 
 }
 

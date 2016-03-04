@@ -4,6 +4,7 @@ attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aCenterOfMass;
 attribute vec3 aFlatNormal;
+attribute vec2 aTexCoord;
 
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
@@ -42,6 +43,7 @@ varying vec4 vLightDir[2];
 varying vec4 vNormal;
 varying vec4 vViewDir;
 varying vec4 vColor;
+varying vec2 vTexCoord;
 
 vec4 ambientColor(Light light, Material material);
 vec4 diffuseColor(Light light, Material material, Vertex vertex);
@@ -154,6 +156,10 @@ void main()
 
 		vColor = clamp(color1 + color0, 0.0, 1.0);	
 	}
+
+
+	// texture coord
+	vTexCoord = aTexCoord;
 }
 
 
