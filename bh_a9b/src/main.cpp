@@ -187,7 +187,7 @@ void initShaderProgram(void)
 	// Load shaders and use the resulting shader program based on the OS
 #ifdef __linux__ 
 	program.lineShader = InitShader("./shader/vLineShader.glsl", "./shader/fLineShader.glsl");
-	program.polygonShader = InitShader("./shader/vPolygonShader.glsl", "./shader/fPolygonShader.glsl");
+	program.polygonShader = InitShader("./shader/vPolygonShader.glsl", "./shader/fPolygonShader_linux.glsl");
 	program.pickingShader = InitShader("./shader/vPickingShader.glsl", "./shader/fPickingShader.glsl");
 #elif _WIN32
 	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
