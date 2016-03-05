@@ -74,4 +74,6 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals);
 void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh);
 void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces);
+int loadImage(char* fileName, Image &image);
+void generateTexCoord(vector<point3> &vertices, vector<vec3> &texCoord);
 #endif
