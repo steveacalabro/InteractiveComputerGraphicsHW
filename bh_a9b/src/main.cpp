@@ -1096,6 +1096,11 @@ void printInstructions()
 	fprintf(stdout, "%d. Press 'W', 'S' for increasing and decreasing the camera's Y position \n", item); item++;
 	fprintf(stdout, "%d. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n", item); item++;
 	fprintf(stdout, "%d. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n", item); item++;
+
+	fprintf(stdout, "%d. Press 'Z', 'X' to increasing and decreasing the light's rotation raidus \n", item); item++;
+	fprintf(stdout, "%d. Press 'C', 'V' to increasing and decreasing the light's Y position \n", item); item++;
+	fprintf(stdout, "%d. Press 'B', 'N' to increasing and decreasing the light's rotation anglen \n", item); item++;
+
 	fprintf(stdout, "%d. Press 'R' to reset camera \n", item); item++;
 	fprintf(stdout, "%d. Press 'SPACE' to pause/resume animationn \n", item); item++;
 
@@ -1188,9 +1193,14 @@ GLuint createTexture(char* imagePath, int textureSize = 256)
 
 void initTextures()
 {
-	woodTex = createTexture("..\\src\\resources\\wood.bmp");
-	clothTex = createTexture("..\\src\\resources\\cloth.bmp");
 
+#ifdef __linux__ 
+	woodTex =  createTexture("./resources/wood.bmp");
+	clothTex = createTexture("./resources/cloth.bmp");
+#elif _WIN32
+	woodTex =  createTexture("..\\src\\resources\\wood.bmp");
+	clothTex = createTexture("..\\src\\resources\\cloth.bmp");
+#endif
 	// active the wood texture by default
 	glActiveTexture(GL_TEXTURE0);
 
