@@ -45,9 +45,10 @@ vec4 specularColor(Light light, Material material);
 vec4 PhongColor(Light light, Material material, Fragment fragment);
 
 float mirrorEffect(vec3 normal){
-	float mirrorX = mod(tan(normal.x)*pow(normal.z, normal.y), fract(sin(pow(normal.z, normal.x))));
-	float mirrorY = mod(tan(normal.y)*pow(normal.z, normal.x), fract(cos(pow(normal.y, normal.x))));
-	float mirrorZ = mod(cos(normal.z)/sin(normal.z)*pow(normal.y, normal.x), sin(pow(normal.z, normal.x)));
+	float mirrorX = mod(asin(normal.x)*pow(normal.z, normal.y), fract(tan(pow(normal.z, normal.x))));
+	float mirrorY = mod(cos(normal.y)*pow(normal.z, normal.x), fract(tan(pow(normal.y, normal.x))));
+
+	float mirrorZ = mod(atan(normal.z)*pow(normal.y, normal.x), fract(tan(pow(normal.z, normal.y))));
 	return  mirrorX*mirrorY*mirrorZ;
 }
 
