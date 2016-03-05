@@ -4,6 +4,7 @@ attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec3 aCenterOfMass;
 attribute vec3 aFlatNormal;
+attribute vec3 aTexCoord;
 
 uniform mat4 u_MVP;
 uniform mat4 u_MV;
@@ -42,6 +43,7 @@ varying vec4 vLightDir[2];
 varying vec4 vNormal;
 varying vec4 vViewDir;
 varying vec4 vColor;
+varying vec3 vTexCoord;
 
 vec4 ambientColor(Light light, Material material);
 vec4 diffuseColor(Light light, Material material, Vertex vertex);
@@ -86,7 +88,7 @@ void main()
 	Material metal, plastic, gold, material;
 	// metal material
 	//metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
-	metal.kd = vec4(u_Color, 1.0);
+	metal.kd = vec4(0.8,0.8,0.8, 1.0);
 	metal.ks = vec4(1.0, 1.0, 1.0, 1.0);
 	metal.ka = vec4(0.1, 0.1, 0.1, 1.0);
 	metal.shininess =  150.0;
@@ -127,7 +129,7 @@ void main()
 	vec4 color1 = GouraudColor(light1, material, vertex);
 
 	vColor = clamp(color1 + color0, 0.0, 1.0);
-	vColor = clamp(color1, 0.0, 1.0);
+	//vColor = clamp(color1, 0.0, 1.0);
 
 
 
@@ -156,8 +158,11 @@ void main()
 		color1 = diffuseColor(light1, material, vertex);
 
 		vColor = clamp(color1 + color0, 0.0, 1.0);	
-		vColor = clamp(color1, 0.0, 1.0);	
+		//vColor = clamp(color1, 0.0, 1.0);	
 	}
+
+	// texture coord
+	vTexCoord = aTexCoord;
 }
 
 

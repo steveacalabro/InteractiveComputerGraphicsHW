@@ -5,10 +5,13 @@ varying vec4 vColor;
 varying vec4 vLightDir[2];
 varying vec4 vNormal;
 varying vec4 vViewDir;
+varying vec3 vTexCoord;
 //varying int v_material;
 uniform int u_shadingModel;
 uniform int u_material;
 uniform vec3 u_Color;
+
+uniform sampler2D texture; //texture object id from application
 // defined in view space
 
 struct Fragment{
@@ -35,6 +38,19 @@ vec4 ambientColor(Light light, Material material);
 vec4 diffuseColor(Light light, Material material);
 vec4 specularColor(Light light, Material material);
 vec4 PhongColor(Light light, Material material, Fragment fragment);
+
+float rand(vec3 co){
+	return mod(tan(co.x)*pow(co.z, co.y), fract(sin(pow(co.z, co.x)))) * mod(tan(co.y)*pow(co.z, co.x), 3)* mod(cos(co.z)/sin(co.z)*pow(co.y, co.x), sin(pow(co.z, co.x)));
+}
+
+float turblulence(vec3 Q){
+	float value = 0;
+	for(float f=20;f<80;f*=3){
+		value += abs(rand(Q))/f;		
+	}
+	return value;
+}
+
 void main()
 {
 
@@ -63,7 +79,7 @@ void main()
 		Material metal, plastic, gold, material;
 		// metal material
 		//metal.kd = vec4(0.5, 0.5, 0.5, 1.0);
-		metal.kd = vec4(u_Color, 1.0);
+		metal.kd = vec4(0.8,0.8,0.8, 1.0);
 		metal.ks = vec4(1.0, 1.0, 1.0, 1.0);
 		metal.ka = vec4(0.1, 0.1, 0.1, 1.0);
 		metal.shininess =  150.0;
@@ -105,13 +121,20 @@ void main()
 		vec4 color1 = PhongColor(light1, material, fragment);
 
 		fragColor = clamp(color1 + color0, 0.0, 1.0);
-		fragColor = clamp(color1, 0.0, 1.0);
+
+		//float noise = rand(fragment.normal.xyz);
+		//fragColor = fragColor*noise;
 	}
 	else{
 		fragColor = vColor;
 	}
 
-	gl_FragColor = vec4(fragColor.rgb, 1.0);
+	// circle is on X-Z plane and Y is t
+	//vec2 cylinderCoord = vec2(vTexCoord.x*vTexCoord.x + vTexCoord.y*vTexCoord.y, vTexCoord.z);
+	vec2 cylinderCoord = vec2(vTexCoord.x, vTexCoord.y);
+	vec3 textureColor = texture2D( texture, cylinderCoord).rgb;
+	//gl_FragColor = vec4(fragColor.rgb* texture2D( texture, vTexCoord.xz).rgb, 1.0);
+	gl_FragColor = vec4(fragColor.rgb*textureColor, 1.0);
 
 }
 
@@ -121,6 +144,9 @@ vec4 ambientColor(Light light, Material material){
 
 	// ambient = Ia * ka
 	vec4 ambient  = light.ambient * material.ka;
+	//float noise = rand(vNormal.xyz);
+	float noise = turblulence(cos(vNormal.xyz));
+	//return ambient*noise;
 	return ambient;
 }
 
@@ -132,6 +158,9 @@ vec4 diffuseColor(Light light, Material material, Fragment fragment){
 	// diffuse = Id * kd * cos(theta)
 	vec4 diffuse = light.diffuse * material.kd * clamp(lightDotNormal, 0.0, 1.0);
 
+	//float noise = rand(fragment.normal.xyz);
+	float noise = turblulence(fragment.normal.xyz);
+	//return diffuse*noise*100;
 	return diffuse;
 }
 
