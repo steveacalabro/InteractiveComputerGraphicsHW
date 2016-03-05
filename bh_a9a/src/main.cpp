@@ -59,7 +59,7 @@ enum {METAL, PLASTIC, GOLD };
 enum { GOURAUD, PHONG, FLAT};
 
 int materialOption{ METAL };
-int shaderOption{ FLAT };
+int shaderOption{ PHONG };
 
 
 template <typename T>
