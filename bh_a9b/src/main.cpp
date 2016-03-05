@@ -63,9 +63,13 @@ enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
 enum {METAL, PLASTIC, GOLD };
 enum { GOURAUD, PHONG, FLAT};
 enum { CYLINDER = 2, PLANE = 3 };
+
+enum { WOOD = 4, CLOTH = 5 };
+// textures id
+GLuint woodTex, clothTex;
+
 int materialOption{ METAL };
 int shaderOption{ PHONG };
-
 int texMappingOption{ CYLINDER };
 
 template <typename T>
@@ -453,6 +457,28 @@ void texMappingMenu(int option)
 	glutPostRedisplay();
 }
 
+void texImgMenu(int option)
+{
+	switch (option)
+	{
+	case WOOD:
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, woodTex);
+		//glUniform1i(glGetUniformLocation(program.polygonShader, "texture"), 0);
+		fprintf(stdout, " Set texture to wood\n");
+		break;
+
+	case CLOTH:
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, clothTex);
+		//glUniform1i(glGetUniformLocation(program.polygonShader, "texture"), 0);
+		fprintf(stdout, " Set texture to cloth\n");
+		break;
+	}
+	glutPostRedisplay();
+}
+
+
 void parentMenu(int option)
 {
 	glutPostRedisplay();
@@ -490,12 +516,18 @@ void createAnimationMenus() {
 	glutAddMenuEntry("Cylindrical", CYLINDER);
 	glutAddMenuEntry("Planar", PLANE);
 
+	// texture image selection
+	int textureImgSubMenu = glutCreateMenu(texImgMenu);
+	glutAddMenuEntry("Wood", WOOD);
+	glutAddMenuEntry("Cloth", CLOTH);
+
 
 	// create a parent menu and add entries to parent menu
 	glutCreateMenu(parentMenu);
 	glutAddSubMenu("Projection Mode", projectionSubMenu);
 	glutAddSubMenu("Shading Model", shadingSubMenue);
 	glutAddSubMenu("Material", materialSubMenue);
+	glutAddSubMenu("Texture image", textureImgSubMenu);
 	glutAddSubMenu("Texture mapping Model", texMappingSubMenu);
 	
 	
@@ -1109,7 +1141,8 @@ void initPickingFBO() {
 
 }
 
-void initTexture()
+
+GLuint createTexture(char* imagePath, int textureSize = 256)
 {
 	/**************checker board image ******************/
 	//GLubyte image[64][64][3];
@@ -1125,14 +1158,12 @@ void initTexture()
 	//char* imagePath = "..\\src\\resources\\texture.txt";
 	//Image image;
 	//loadImage(imagePath, image);
-
 	/************** BMP texture image ******************/
-	char* imagePath = "..\\src\\resources\\wood.bmp";
 	unsigned char * image = loadBMP(imagePath);
 
-	GLuint textures[1];
-	glGenTextures(1, textures);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[0].size(),
 	//	image.size(), 0, GL_RGB, GL_FLOAT, &image[0][0][0]);
 
@@ -1141,13 +1172,8 @@ void initTexture()
 	//! if we set GL_RGB or GLBGR the driver converts your GL_RGB or GL_BGR to what the GPU prefers, which typically is BGRA.
 	//! so it's better to tell the driver that we have 3 channels, each channle has 8 bits
 	//!  We should also state that on some platforms, such as Windows, GL_BGRA for the pixel upload format is preferred.
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 256, 256, 0, GL_BGR, GL_UNSIGNED_BYTE, image);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, textureSize, textureSize, 0, GL_BGR, GL_UNSIGNED_BYTE, image);
 
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, 256,
-	//	256, 0, GL_BGR, GL_UNSIGNED_BYTE, image);
-
-	/*glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 64,0
-		64, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0][0][0]);*/
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -1155,6 +1181,17 @@ void initTexture()
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	return texture;
+}
+
+
+void initTextures()
+{
+	woodTex = createTexture("..\\src\\resources\\wood.bmp");
+	clothTex = createTexture("..\\src\\resources\\cloth.bmp");
+
+	// active the wood texture by default
 	glActiveTexture(GL_TEXTURE0);
 
 
@@ -1172,7 +1209,7 @@ void initScene() {
 	initAxis();
 	initModel();
 
-	initTexture();
+	initTextures();
 
 	initCamera(camera, PERSPECTIVE);
 
