@@ -142,7 +142,7 @@ VertexArrayObject initVAO(const GLuint program, const T1 *verts, const T2 *indic
 	GLuint vertBuffer = initVBO(verts, numPoints, isDynamic);
 	GLuint elementBuffer = initEBO(indices, numElements, isDynamic);
 
-	int numVertComponents = sizeof(verts[0]) / sizeof(float); // assumes all elements are floats
+	int numVertComponents; // assumes all elements are floats
 	numVertComponents = 3; // no matter we use vec3 or array, one vertex has 3 components
 
 	initAttributeVariable(program, "vPosition", vertBuffer, numVertComponents);
@@ -337,15 +337,15 @@ void renderToPickingBuffer() {
 	glViewport(0, 0, 500, 500);
 
 	renderMeshObject(bunny, program.pickingShader);
-	renderMeshObject(icos, program.pickingShader);
-	renderMeshObject(octahedron, program.pickingShader);
+	//renderMeshObject(icos, program.pickingShader);
+	//renderMeshObject(octahedron, program.pickingShader);
 
 }
 
 void render() {
 
 	updateScene();
-	renderToPickingBuffer();
+	//renderToPickingBuffer();
 	renderToBackBuffer();
 
 }
@@ -437,7 +437,9 @@ void parentMenu(int option)
 }
 
 void createAnimationMenus() {
-	GLuint menu, projectionSubMenu, materialSubMenue, shadingSubMenue;
+	GLuint projectionSubMenu;
+	GLuint materialSubMenue;
+	GLuint shadingSubMenue;
 
 
 	// projection mode
@@ -450,8 +452,8 @@ void createAnimationMenus() {
 	// material
 	materialSubMenue = glutCreateMenu(materialMenue);
 	glutAddMenuEntry("Metal", METAL);
-	//glutAddMenuEntry("Plastic", PLASTIC);
-	//glutAddMenuEntry("Gold ", GOLD);
+	glutAddMenuEntry("Plastic", PLASTIC);
+	glutAddMenuEntry("Gold ", GOLD);
 
 
 	// shading model
@@ -463,7 +465,7 @@ void createAnimationMenus() {
 	
 
 	// create a parent menu
-	menu = glutCreateMenu(parentMenu);
+	glutCreateMenu(parentMenu);
 	glutAddSubMenu("Projection Mode", projectionSubMenu);
 	glutAddSubMenu("Shading Model", shadingSubMenue);
 	glutAddSubMenu("Material", materialSubMenue);
@@ -521,7 +523,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 void myKeyboard(unsigned char key, int x, int y)
 {
 	double delta = 0.1; double theta = 10.0;
-	double deltaX{0}, deltaY{ 0 }, deltaZ{ 0 };
+
 	switch (key) {
 		// camera radius
 	case 'd':case 'D': camRadius += delta; 
@@ -664,7 +666,7 @@ int createOpenGLContext(const char* windowName, const int x, const int y, const 
 
 	if (!err) {
 		glewExperimental = GL_TRUE;
-		GLenum err = glewInit();
+		err = glewInit();
 	}
 
 	
@@ -672,9 +674,8 @@ int createOpenGLContext(const char* windowName, const int x, const int y, const 
 	if (GLEW_OK != err)
 	{
 		/* Problem: glewInit failed, something is seriously wrong. */
-		//fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+		fprintf(stderr, "Error: %p\n", glewGetErrorString(err));
 	}
-	//fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 
 	initShaderProgram(); // note that each windows should have a shader program
 	return windowID;
@@ -794,12 +795,13 @@ void initMesh(MeshObject &meshObject) {
 	vec3* normals = new vec3[vertArrayLength];
 	vec3* triangleNormal = new vec3[vertArrayLength];
 	point3* centerOfMass = new point3[vertArrayLength];
+	vec3* texCoord = new vec3[vertArrayLength];
 
 	int sizePoints = vertArrayLength*sizeof(points[0]);
 	int sizeNormals = vertArrayLength*sizeof(normals[0]);
 	int sizeTriangleNormal = vertArrayLength*sizeof(triangleNormal[0]);
 	int sizeCenterOfMass = vertArrayLength* sizeof(centerOfMass[0]);
-
+	int sizeTexCoord = vertArrayLength* sizeof(texCoord[0]);
 
 	for (int i = 0; i < meshLength; i++) {
 
@@ -818,6 +820,13 @@ void initMesh(MeshObject &meshObject) {
 		centerOfMass[3 * i] = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 1] = mesh[i].centerOfMass;
 		centerOfMass[3 * i + 2] = mesh[i].centerOfMass;
+
+		texCoord[3 * i] = mesh[i].texCoord[0];
+		texCoord[3 * i + 1] = mesh[i].texCoord[1];
+		texCoord[3 * i + 2] = mesh[i].texCoord[2];
+
+
+
 	}
 
 	// Create a vertex array object
@@ -830,7 +839,7 @@ void initMesh(MeshObject &meshObject) {
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
 	// total buffer size
-	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal + sizeTexCoord, NULL, GL_STATIC_DRAW);
 
 	// points
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizePoints, points);
@@ -844,6 +853,8 @@ void initMesh(MeshObject &meshObject) {
 	// facet normal for flat shading 
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass, sizeTriangleNormal, triangleNormal);
 
+	// facet texture coord
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal, sizeTexCoord, texCoord);
 
 	// set up vertex buffer pointers
 	GLuint aPosition = glGetAttribLocation(program.polygonShader, "aPosition");
@@ -862,6 +873,9 @@ void initMesh(MeshObject &meshObject) {
 	glEnableVertexAttribArray(aFlatNormal);
 	glVertexAttribPointer(aFlatNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals + sizeCenterOfMass));
 
+	GLuint aTexCoord = glGetAttribLocation(program.polygonShader, "aTexCoord");
+	glEnableVertexAttribArray(aTexCoord);
+	glVertexAttribPointer(aTexCoord, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizePoints + sizeNormals + sizeCenterOfMass + sizeTriangleNormal));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
@@ -890,6 +904,7 @@ void initMesh(MeshObject &meshObject) {
 	delete[] normals;
 	delete[] centerOfMass;
 	delete[] triangleNormal;
+	delete[] texCoord;
 }
 
 void initModel(){
@@ -901,7 +916,8 @@ void initModel(){
 		char* octahedronPath = "./resources/octahedron.smf";
 	#elif _WIN32
 		
-		char* bounnyPath = "..\\src\\resources\\bound-bunny_1k.smf";
+		//char* bounnyPath = "..\\src\\resources\\bound-bunny_1k.smf";
+		char* bounnyPath = "..\\src\\resources\\icos.smf";
 		char* icosPath = "..\\src\\resources\\icos.smf";
 		char* octahedronPath = "..\\src\\resources\\octahedron.smf";
 		
@@ -913,9 +929,9 @@ void initModel(){
 	bunny.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
 	bunny.objectColor[RENDER] = bunny.objectColor[ORIGINAL];
 	//bunny.material.kd = bunny.objectColor[RENDER];
-	bunny.translate(1.0, -1.0, -2.0);
+	//bunny.translate(1.0, -1.0, -2.0);
 
-	loadSFM(icosPath, icos.mesh);
+	/*loadSFM(icosPath, icos.mesh);
 	initMesh(icos);
 	icos.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
 	icos.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
@@ -926,7 +942,7 @@ void initModel(){
 	initMesh(octahedron);
 	octahedron.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
 	octahedron.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
-	octahedron.objectColor[RENDER] = octahedron.objectColor[ORIGINAL];
+	octahedron.objectColor[RENDER] = octahedron.objectColor[ORIGINAL];*/
 
 }
 
@@ -1025,8 +1041,7 @@ void printInstructions()
 
 	fprintf(stdout, "%d. Use mouse left click to select object\n", item); item++;
 	fprintf(stdout, "%d. Use mouse right click to change camera's projection mode and shading model\n", item); item++;
-	fprintf(stdout, "%d. Press 'ESC' to exit program \n", item); item++;
-
+	fprintf(stdout, "%d. Press 'ESC' to exit program \n", item);
 }
 
 
@@ -1066,19 +1081,59 @@ void initPickingFBO() {
 
 }
 
+void initTexture()
+{
+	
+	//GLubyte image[64][64][3];
+	//// Create a 64 x 64 checkerboard pattern
+	//for (int i = 0; i < 64; i++) {
+	//	for (int j = 0; j < 64; j++) {
+	//		GLubyte c = (((i & 0x8) == 0) ^ ((j & 0x8) == 0)) * 255;
+	//		image[i][j][0] = c;
+	//		image[i][j][1] = c;
+	//		image[i][j][2] = c;
+	//	}
+	//}
+	char* imagePath = "..\\src\\resources\\texaTexCoordture.txt";
+	Image image;
+	loadImage(imagePath, image);
+
+	
+	GLuint textures[1];
+	glGenTextures(1, textures);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[0].size(),
+		image.size(), 0, GL_RGB, GL_FLOAT, &image[0][0][0]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glActiveTexture(GL_TEXTURE0);
+
+
+	// Set the value of the fragment shader texture sampler variable
+	// ("texture") to the the appropriate texture unit. In this case,
+	// zero, for GL_TEXTURE0 which was previously set by calling
+	// glActiveTexture().
+	glUniform1i(glGetUniformLocation(program.polygonShader, "texture"), 0);
+}
+
+
 void initScene() {
 	printInstructions();
 
 	initAxis();
 	initModel();
-	//initControlPoints();
+
+	initTexture();
 
 	initCamera(camera, PERSPECTIVE);
 
-	initPickingFBO();
-	// init color cube
-	//initColorCube();
-	//ColorCube.init(program);
+	//initPickingFBO();
+
 }
 
 
