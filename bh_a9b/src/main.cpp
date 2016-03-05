@@ -1085,7 +1085,7 @@ void initTexture()
 {
 	
 	//GLubyte image[64][64][3];
-	//// Create a 64 x 64 checkerboard pattern
+	// Create a 64 x 64 checkerboard pattern
 	//for (int i = 0; i < 64; i++) {
 	//	for (int j = 0; j < 64; j++) {
 	//		GLubyte c = (((i & 0x8) == 0) ^ ((j & 0x8) == 0)) * 255;
@@ -1094,16 +1094,25 @@ void initTexture()
 	//		image[i][j][2] = c;
 	//	}
 	//}
-	char* imagePath = "..\\src\\resources\\texaTexCoordture.txt";
-	Image image;
-	loadImage(imagePath, image);
+	//char* imagePath = "..\\src\\resources\\texture.txt";
+	//Image image;
+	//loadImage(imagePath, image);
 
-	
+
+	char* imagePath = "..\\src\\resources\\wood.bmp";
+	unsigned char * image = loadBMP(imagePath);
+
 	GLuint textures[1];
 	glGenTextures(1, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[0].size(),
-		image.size(), 0, GL_RGB, GL_FLOAT, &image[0][0][0]);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[0].size(),
+	//	image.size(), 0, GL_RGB, GL_FLOAT, &image[0][0][0]);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256,
+		256, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+	/*glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 64,0
+		64, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0][0][0]);*/
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
