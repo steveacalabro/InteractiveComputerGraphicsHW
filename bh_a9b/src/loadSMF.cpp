@@ -12,6 +12,7 @@
 using namespace std;
 
 
+
 void averageNormals(vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals) {
 	// for Gourau shading
 	Plane plane;
@@ -47,6 +48,7 @@ int loadSFM(char* fileName, Mesh &mesh) {
 	vector<point3> vertices;
 	vector<vec3>   normals;
 	vector<point3> faces;
+	vector<vec3> texCoord;
 
 
 	// if not opened
@@ -79,7 +81,7 @@ int loadSFM(char* fileName, Mesh &mesh) {
 		}
 
 		if (triangleElement.size() != 3) {
-			fprintf(stdout, "Only read %d elements from current line \n", triangleElement.size());
+			fprintf(stdout, "Only read %d elements from current line \n", static_cast<int>(triangleElement.size()));
 			return 0;
 		}
 
@@ -101,7 +103,7 @@ int loadSFM(char* fileName, Mesh &mesh) {
 
 
 	averageNormals(vertices, faces, normals);
-
+	generateTexCoord(vertices, texCoord);
 
 	Plane temp;
 
@@ -121,7 +123,10 @@ int loadSFM(char* fileName, Mesh &mesh) {
 		facet.normals[0] = normals[facet.faces[0]];
 		facet.normals[1] = normals[facet.faces[1]];
 		facet.normals[2] = normals[facet.faces[2]];
-	
+		
+		facet.texCoord[0] = texCoord[facet.faces[0]];
+		facet.texCoord[1] = texCoord[facet.faces[1]];
+		facet.texCoord[2] = texCoord[facet.faces[2]];
 		
 		temp.set3Points(facet.vertices[0], facet.vertices[2], facet.vertices[1]); // in this case clock wise is normal direction
 
@@ -134,6 +139,7 @@ int loadSFM(char* fileName, Mesh &mesh) {
 		cout << "Mesh size is 0 \n";
 		return 0;
 	}
+	return 1;
 }
 
 
@@ -169,7 +175,7 @@ int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints) {
 		}
 
 		if (coord.size() != 3) {
-			fprintf(stdout, "Only read %d elements from current line \n", coord.size());
+			fprintf(stdout, "Only read %d elements from current line \n", static_cast<int>(coord.size()));
 			return 0;
 		}
 		else {
@@ -184,52 +190,8 @@ int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints) {
 }
 
 
-void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh) {
-	vector<vector<point3>> meshVerts;
-	vector<point3> vertices;
-	vector<vec3>   normals;
-	vector<point3> faces;
-
-	meshVerts = interpolateBezirPatch(controlPoints, resolution);
-
-	tessellate(meshVerts, vertices, faces, normals);
-
-	// export to smf file
-	/*string outputSMF = "..\\src\\resources\\bezierPatch.obj";
-	exportSMF(outputSMF, vertices, faces);*/
 
 
-	// calculate the average normals for shanding
-	averageNormals(vertices, faces, normals);
-
-	Plane temp;
-
-	// store data in mesh
-	for (int i = 0; i < faces.size(); i++) {
-		//! smf index starts from 1 instead of 0, so need to -1
-		Triangle3D facet;
-
-		facet.faces[0] = int(faces[i][0]) - 1;
-		facet.faces[1] = int(faces[i][1]) - 1;
-		facet.faces[2] = int(faces[i][2]) - 1;
-
-		facet.vertices[0] = vertices[facet.faces[0]];
-		facet.vertices[1] = vertices[facet.faces[1]];
-		facet.vertices[2] = vertices[facet.faces[2]];
-
-		facet.normals[0] = normals[facet.faces[0]];
-		facet.normals[1] = normals[facet.faces[1]];
-		facet.normals[2] = normals[facet.faces[2]];
-
-
-		temp.set3Points(facet.vertices[0], facet.vertices[1], facet.vertices[2]); // in this case clock wise is normal direction
-
-		facet.triangleNormal = temp.normal;
-		facet.centerOfMass = (facet.vertices[0] + facet.vertices[1] + facet.vertices[2]) / 3;
-		mesh.push_back(facet);
-	}
-
-}
 
 
 vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints, const int &resolution) {
@@ -301,6 +263,88 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 	
 }
 
+
+
+void getMax(vector<point3> &vertices, double &x, double &y, double &z)
+{
+	double maxX = -1000;
+	double maxY = -1000;
+	double maxZ = -1000;
+	
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		if (vertices[i].x > maxX)
+		{
+			maxX = vertices[i].x;
+		}
+		if (vertices[i].y > maxY)
+		{
+			maxY = vertices[i].y;
+		}
+		if (vertices[i].z > maxZ)
+		{
+			maxZ = vertices[i].z;
+		}
+	}
+
+	x = maxX;
+	y = maxY;
+	z = maxZ;
+
+}
+
+void getMin(vector<point3> &vertices, double &x, double &y, double &z)
+{
+	double minX = 1000;
+	double minY = 1000;
+	double minZ = 1000;
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		if (vertices[i].x < minX)
+		{
+			minX = vertices[i].x;
+		}
+		if (vertices[i].y < minY)
+		{
+			minY = vertices[i].y;
+		}
+		if (vertices[i].z < minZ)
+		{
+			minZ = vertices[i].z;
+		}
+	}
+
+	x = minX;
+	y = minY;
+	z = minZ;
+
+}
+
+void generateTexCoord(vector<point3> &vertices, vector<vec3> &texCoord)
+{
+	double minX, minY, minZ, maxX, maxY, maxZ;
+	getMax(vertices, maxX, maxY, maxZ);
+	getMin(vertices, minX, minY, minZ);
+
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		// normalize to 0~1
+		double x = (vertices[i].x - minX) / (maxX - minX);
+		double y = (vertices[i].y - minY) / (maxY - minY);
+		double z = (vertices[i].z - minZ) / (maxZ - minZ);
+
+		// convert to -1/2/PI ~ 1/2/PI
+		double PI = 3.14;
+		x = (x - 0.5 / PI);
+		z = (z - 0.5 / PI);
+		texCoord.push_back(point3(x,y,z));
+	}
+}
+
+
+
 void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &vertices, vector<point3> &faces, vector<vec3> &normals, vector<vec2> &texCoord) {
 
 	int uLength = patchPoints.size();
@@ -325,6 +369,111 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 	}
 	
 }
+
+void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh) {
+	vector<vector<point3>> meshVerts;
+	vector<point3> vertices;
+	vector<vec3>   normals;
+	vector<point3> faces;
+	vector<vec2> texCoord;
+
+	meshVerts = interpolateBezirPatch(controlPoints, resolution);
+
+	tessellate(meshVerts, vertices, faces, normals, texCoord);
+
+
+	// calculate the average normals for shanding
+	averageNormals(vertices, faces, normals);
+
+	// export to smf file
+	// string outputSMF = "..\\src\\resources\\bezierPatch.obj";
+	// exportSMF(outputSMF, vertices, faces, normals);
+
+
+	Plane temp;
+
+	// store data in mesh
+	for (int i = 0; i < faces.size(); i++) {
+		//! smf index starts from 1 instead of 0, so need to -1
+		Triangle3D facet;
+
+		facet.faces[0] = int(faces[i][0]) - 1;
+		facet.faces[1] = int(faces[i][1]) - 1;
+		facet.faces[2] = int(faces[i][2]) - 1;
+
+		facet.vertices[0] = vertices[facet.faces[0]];
+		facet.vertices[1] = vertices[facet.faces[1]];
+		facet.vertices[2] = vertices[facet.faces[2]];
+
+		facet.normals[0] = normals[facet.faces[0]];
+		facet.normals[1] = normals[facet.faces[1]];
+		facet.normals[2] = normals[facet.faces[2]];
+
+
+		//facet.texCoord[0] = texCoord[facet.faces[0]];
+		//facet.texCoord[1] = texCoord[facet.faces[1]];
+		//facet.texCoord[2] = texCoord[facet.faces[2]];
+
+		temp.set3Points(facet.vertices[0], facet.vertices[1], facet.vertices[2]); // in this case clock wise is normal direction
+
+		facet.triangleNormal = temp.normal;
+		facet.centerOfMass = (facet.vertices[0] + facet.vertices[1] + facet.vertices[2]) / 3;
+		mesh.push_back(facet);
+	}
+
+}
+
+
+int loadImage(char* fileName, Image &image) {
+	fstream file(fileName);
+	string buffer;
+
+	//Image image;
+	// if not opened
+	if (!file.is_open())
+	{
+		cout << "Unable to open file" << endl;
+		return 0;
+	}
+
+	// read file line by line
+	int row = 0; 
+	int col = 0;
+	while (getline(file, buffer, '\n'))
+	{
+
+		// read each element in this line
+		stringstream currentLine(buffer);
+		string currentColumn;
+		vector<color3Byte> temp;
+		vector<int> pixel;
+		int channel = 0;
+		while (getline(currentLine, currentColumn, ' '))
+		{
+			pixel.push_back(stoi(currentColumn)); //! stod converts string to int
+			channel++;
+			if(channel == 3)
+			{
+				temp.push_back(color3Byte(pixel[0], pixel[1], pixel[2]));
+				col++;
+				pixel.clear();
+				channel = 0;
+			}
+		}
+
+		image.push_back(temp);
+		row++;
+
+		//if (pixel.size() != 3) {
+		//	fprintf(stdout, "Only read %d channels from current pixel \n", static_cast<int>(pixel.size()));
+		//	return 0;
+		//}
+	}
+
+	return 1;
+	
+}
+
 
 
 void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces, const vector<point3> &normals) {
