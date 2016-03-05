@@ -55,7 +55,7 @@ float mirrorEffect(vec3 normal){
 float turbulence(vec3 normal){
 	float value = 0;
 	float frequency = 30.0;
-	float value += abs(mirrorEffect(normal))/frequency;		
+	value = abs(mirrorEffect(normal))/frequency;		
 	return value*1000;
 }
 
