@@ -127,6 +127,8 @@ int loadSFM(char* fileName, Mesh &mesh) {
 		facet.texCoord[0] = texCoord[facet.faces[0]];
 		facet.texCoord[1] = texCoord[facet.faces[1]];
 		facet.texCoord[2] = texCoord[facet.faces[2]];
+
+
 		
 		temp.set3Points(facet.vertices[0], facet.vertices[2], facet.vertices[1]); // in this case clock wise is normal direction
 
@@ -336,9 +338,9 @@ void generateTexCoord(vector<point3> &vertices, vector<vec3> &texCoord)
 		double z = (vertices[i].z - minZ) / (maxZ - minZ);
 
 		// convert to -1/2/PI ~ 1/2/PI
-		double PI = 3.14;
-		x = (x - 0.5 / PI);
-		z = (z - 0.5 / PI);
+		//double PI = 3.14;
+		//x = (x - 0.5 / PI);
+		//z = (z - 0.5 / PI);
 		texCoord.push_back(point3(x,y,z));
 	}
 }
@@ -445,16 +447,16 @@ int loadImage(char* fileName, Image &image) {
 		// read each element in this line
 		stringstream currentLine(buffer);
 		string currentColumn;
-		vector<color3Byte> temp;
-		vector<int> pixel;
+		vector<color3> temp;
+		vector<float> pixel;
 		int channel = 0;
 		while (getline(currentLine, currentColumn, ' '))
 		{
-			pixel.push_back(stoi(currentColumn)); //! stod converts string to int
+			pixel.push_back(stof(currentColumn)/255.0); //! stod converts string to int
 			channel++;
 			if(channel == 3)
 			{
-				temp.push_back(color3Byte(pixel[0], pixel[1], pixel[2]));
+				temp.push_back(color3(pixel[0], pixel[1], pixel[2]));
 				col++;
 				pixel.clear();
 				channel = 0;
