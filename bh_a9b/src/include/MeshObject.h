@@ -16,7 +16,33 @@ typedef vec3 color3;
 typedef vec4 point4;
 typedef vec4 color4;
 
+// this is color3 byte version, color3 is float
+struct color3Byte
+{
+	GLubyte  x;
+	GLubyte  y;
+	GLubyte  z;
 
+	//
+	//  --- Constructors and Destructors ---
+	//
+
+	color3Byte(GLubyte s = GLubyte(255)) :
+		x(s), y(s), z(s) {}
+
+	color3Byte(GLubyte x, GLubyte y, GLubyte z) :
+		x(x), y(y), z(z) {}
+
+	color3Byte(const color3Byte& v) { x = v.x;  y = v.y;  z = v.z; }
+
+	//
+	//  --- Indexing Operator ---
+	//
+	GLubyte& operator [] (int i) { return *(&x + i); }
+	const color3Byte operator [] (int i) const { return *(&x + i); }
+};
+
+typedef vector<vector<color3Byte>> Image;
 
 // 3D triangle, each triangle has 3 vertices and 3 normals
 struct Triangle3D
@@ -26,7 +52,7 @@ struct Triangle3D
 	vec3 normals[3]; // 3 normal 
 	vec3 triangleNormal; // the normal of the triangle plane
 	vec3 centerOfMass;
-
+	vec3 texCoord[3];
 };
 
 // a mesh is a seris of 3d triangles
