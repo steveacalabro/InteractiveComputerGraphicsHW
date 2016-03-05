@@ -1,6 +1,10 @@
 #version 120
 #define GOURAUD 0
 #define PHONG 1
+
+
+#define CYLINDER 2
+#define PLANE 3
 varying vec4 vColor;
 varying vec4 vLightDir[2];
 varying vec4 vNormal;
@@ -10,6 +14,7 @@ varying vec3 vTexCoord;
 uniform int u_shadingModel;
 uniform int u_material;
 uniform vec3 u_Color;
+uniform int u_texMappingModel;
 
 uniform sampler2D texture; //texture object id from application
 // defined in view space
@@ -39,16 +44,19 @@ vec4 diffuseColor(Light light, Material material);
 vec4 specularColor(Light light, Material material);
 vec4 PhongColor(Light light, Material material, Fragment fragment);
 
-float rand(vec3 co){
-	return mod(tan(co.x)*pow(co.z, co.y), fract(sin(pow(co.z, co.x)))) * mod(tan(co.y)*pow(co.z, co.x), 3)* mod(cos(co.z)/sin(co.z)*pow(co.y, co.x), sin(pow(co.z, co.x)));
+float mirrorEffect(vec3 normal){
+	float mirrorX = mod(tan(normal.x)*pow(normal.z, normal.y), fract(sin(pow(normal.z, normal.x))));
+	float mirrorY = mod(tan(normal.y)*pow(normal.z, normal.x), fract(cos(pow(normal.y, normal.x))));
+	float mirrorZ = mod(cos(normal.z)/sin(normal.z)*pow(normal.y, normal.x), sin(pow(normal.z, normal.x)));
+	return  mirrorX*mirrorY*mirrorZ;
 }
 
-float turblulence(vec3 Q){
+float turbulence(vec3 normal){
 	float value = 0;
 	for(float f=20;f<80;f*=3){
-		value += abs(rand(Q))/f;		
+		value += abs(mirrorEffect(normal))/f;		
 	}
-	return value;
+	return value*1000;
 }
 
 void main()
@@ -122,18 +130,32 @@ void main()
 
 		fragColor = clamp(color1 + color0, 0.0, 1.0);
 
-		//float noise = rand(fragment.normal.xyz);
-		//fragColor = fragColor*noise;
 	}
 	else{
 		fragColor = vColor;
 	}
 
-	// circle is on X-Z plane and Y is t
-	//vec2 cylinderCoord = vec2(vTexCoord.x*vTexCoord.x + vTexCoord.y*vTexCoord.y, vTexCoord.z);
-	vec2 cylinderCoord = vec2(vTexCoord.x, vTexCoord.y);
-	vec3 textureColor = texture2D( texture, cylinderCoord).rgb;
-	//gl_FragColor = vec4(fragColor.rgb* texture2D( texture, vTexCoord.xz).rgb, 1.0);
+
+	/******************   Texture sampling *******************/
+	vec2 texUV;
+	// plane texture mapping, project to X-Y plane
+	vec2 planeCoord = vec2(vTexCoord.x, vTexCoord.y);
+
+	//vec2 cylinderCoord = vec2(0.5/3.14*acos(2*3.14*vTexCoord.x) + 0.5/3.14*asin(2*3.14*vTexCoord.z), vTexCoord.y);
+
+	// cylinderal texture mapping, circile is on X-Z plane and y is longitude
+	vec2 cylinderCoord = vec2(atan(vTexCoord.z/vTexCoord.x), vTexCoord.y);
+
+
+	if(u_texMappingModel == CYLINDER){
+		texUV = cylinderCoord;
+	}
+	else if(u_texMappingModel == PLANE){
+		texUV = planeCoord;
+	}
+	texUV = cylinderCoord;
+	vec3 textureColor = texture2D(texture, texUV).rgb;
+
 	gl_FragColor = vec4(fragColor.rgb*textureColor, 1.0);
 
 }
@@ -144,9 +166,7 @@ vec4 ambientColor(Light light, Material material){
 
 	// ambient = Ia * ka
 	vec4 ambient  = light.ambient * material.ka;
-	//float noise = rand(vNormal.xyz);
-	float noise = turblulence(cos(vNormal.xyz));
-	//return ambient*noise;
+
 	return ambient;
 }
 
@@ -158,10 +178,9 @@ vec4 diffuseColor(Light light, Material material, Fragment fragment){
 	// diffuse = Id * kd * cos(theta)
 	vec4 diffuse = light.diffuse * material.kd * clamp(lightDotNormal, 0.0, 1.0);
 
-	//float noise = rand(fragment.normal.xyz);
-	float noise = turblulence(fragment.normal.xyz);
-	//return diffuse*noise*100;
-	return diffuse;
+	// add some turbulence on diffuse
+	float noise = turbulence(fragment.normal.xyz);
+	return diffuse*noise;
 }
 
 // Blinn Phong specular
