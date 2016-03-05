@@ -1,8 +1,8 @@
 CS537 Homework Assignment 9a: 2D Texture Mapping
 ====================
-Author: Bingyao Huang
-Date: 03/05/2016
-Language: C++
+#####Author: Bingyao Huang
+#####Date: 03/05/2016
+#####Language: C++
 
 
 
@@ -11,7 +11,7 @@ This code loads 16 Bezier control points from a txt file and render the Bezir co
 
 A rotating camera view of the model is displayed. The camera rotates on a cylinder around the model. Allow the user to interactively change the height, the orbit radius and speed of the camera. The camera rotates around and look at the smf model (i.e. your LookAt point stays constant). The light that defined in model space also rotates on a cylinder around the model. The user can change the orbit radius, light location along the cylinder and angle around the cylinder.
 
-***************************** Instructions *********************************** 
+###Instructions
 1. Press 'W', 'S' for increasing and decreasing the camera's Y position
 2. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus
 3. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed
