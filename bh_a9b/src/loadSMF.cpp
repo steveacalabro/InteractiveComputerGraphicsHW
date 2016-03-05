@@ -97,8 +97,8 @@ int loadSFM(char* fileName, Mesh &mesh) {
 			fprintf(stdout, "buffer[0] is not either 'v' or 'f' \n");
 			return 0;
 		}
-		
-		
+
+
 	}
 
 
@@ -123,13 +123,13 @@ int loadSFM(char* fileName, Mesh &mesh) {
 		facet.normals[0] = normals[facet.faces[0]];
 		facet.normals[1] = normals[facet.faces[1]];
 		facet.normals[2] = normals[facet.faces[2]];
-		
+
 		facet.texCoord[0] = texCoord[facet.faces[0]];
 		facet.texCoord[1] = texCoord[facet.faces[1]];
 		facet.texCoord[2] = texCoord[facet.faces[2]];
 
 
-		
+
 		temp.set3Points(facet.vertices[0], facet.vertices[2], facet.vertices[1]); // in this case clock wise is normal direction
 
 		facet.triangleNormal = temp.normal;
@@ -198,21 +198,21 @@ int loadBezir(char* fileName, Mesh &mesh, vector<point3> &controlPoints) {
 
 vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints, const int &resolution) {
 
-	
+
 	vector<vector<point3>> patchVerts;
 
 	double stepSize = 1.0 / resolution;
 	double u = 0;
-	
+
 
 	vec4 bu, bv;
 
-	while(u <= 1.0) {
+	while (u <= 1.0) {
 		vector<point3> curveVerts;
 		// blending function b(u)
-		bu[0] = pow(1-u, 3);
-		bu[1] = 3*u*pow(1-u, 2);
-		bu[2] = 3*u*u*(1-u);
+		bu[0] = pow(1 - u, 3);
+		bu[1] = 3 * u*pow(1 - u, 2);
+		bu[2] = 3 * u*u*(1 - u);
 		bu[3] = pow(u, 3);
 
 		double v = 0;
@@ -232,7 +232,7 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 					interpolatedPoint.y += bu[i] * bv[j] * controlPoints[4 * i + j].y;
 					interpolatedPoint.z += bu[i] * bv[j] * controlPoints[4 * i + j].z;
 				}
-			}			
+			}
 
 
 			curveVerts.push_back(interpolatedPoint);
@@ -258,11 +258,11 @@ vector<vector<point3>> interpolateBezirPatch(const vector<point3> &controlPoints
 		if (u > 1.0) {
 			u = 1.0;
 		}
-		
+
 	}
 
 	return patchVerts;
-	
+
 }
 
 
@@ -272,7 +272,7 @@ void getMax(vector<point3> &vertices, double &x, double &y, double &z)
 	double maxX = -1000;
 	double maxY = -1000;
 	double maxZ = -1000;
-	
+
 	for (int i = 0; i < vertices.size(); i++)
 	{
 		if (vertices[i].x > maxX)
@@ -340,7 +340,7 @@ void generateTexCoord(vector<point3> &vertices, vector<vec3> &texCoord)
 
 		x = (x - 0.5) / 3.14;
 		z = (z - 0.5) / 3.14;
-		texCoord.push_back(point3(x,y,z));
+		texCoord.push_back(point3(x, y, z));
 	}
 }
 
@@ -354,7 +354,7 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 		for (int v = 0; v < vLength; v++) {
 			vertices.push_back(patchPoints[u][v]);
 			normals.push_back(vec3(0.0));
-			texCoord.push_back(vec2(u / float(uLength), v/ float(vLength)));
+			texCoord.push_back(vec2(u / float(uLength), v / float(vLength)));
 
 			if (u < uLength - 1 && v < vLength - 1) {
 				//! smf index starts from 1 instead of 0, so need to +1
@@ -365,10 +365,10 @@ void tessellate(const vector<vector<point3>> &patchPoints, vector<point3> &verti
 				// counter clock wise, north triangle
 				faces.push_back(point3(u*vLength + v + 1, (u + 1)*vLength + v + 1 + 1, u *vLength + v + 1 + 1));
 			}
-			
+
 		}
 	}
-	
+
 }
 
 void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &mesh) {
@@ -438,7 +438,7 @@ int loadImage(const char* fileName, Image &image) {
 	}
 
 	// read file line by line
-	int row = 0; 
+	int row = 0;
 	int col = 0;
 	while (getline(file, buffer, '\n'))
 	{
@@ -453,7 +453,7 @@ int loadImage(const char* fileName, Image &image) {
 		{
 			pixel.push_back(static_cast<unsigned char>(stoi(currentColumn))); //! stod converts string to int
 			channel++;
-			if(channel == 3)
+			if (channel == 3)
 			{
 				temp.push_back(color3Byte(pixel[0], pixel[1], pixel[2]));
 				col++;
@@ -472,55 +472,76 @@ int loadImage(const char* fileName, Image &image) {
 	}
 
 	return 1;
-	
+
 }
 
 unsigned char * loadBMP(const char* fileName)
 {
-	// Data read from the header of the BMP file
-	unsigned char header[54]; // Each BMP file begins by a 54-bytes header
-	unsigned int dataPos;     // Position in the file where the actual data begins
+	/******* Data read from the header of the BMP file ****/
+
+	// Each BMP file begins by a 54-bytes header
+	unsigned char header[54];
+
+	// Position in the file where the actual data begins
+	unsigned int dataPos;
 	unsigned int width, height;
-	unsigned int imageSize;   // = width*height*3
-	 // Actual RGB data
-	unsigned char * data;
+
+	//imageSize = width*height*3
+	unsigned int imageSize;
+	
 
 	// Open the file
 	FILE * file = fopen(fileName, "rb");
-	if (!file) { printf("Image could not be opened\n"); return 0; }
+	if (!file)
+	{
+		printf("Image could not be opened\n"); return 0;
+	}
 
-	if (fread(header, 1, 54, file) != 54) { // If not 54 bytes read : problem
+
+	// If not 54 bytes read : problem
+	if (fread(header, 1, 54, file) != 54) {
 		printf("Not a correct BMP file\n");
 		return false;
 	}
 
 	if (header[0] != 'B' || header[1] != 'M') {
-		    printf("Not a correct BMP file\n");
-		    return 0;
-		
+		printf("Not a correct BMP file\n");
+		return 0;
+
 	}
 	// Read ints from the byte array
-	 dataPos = *(int*)&(header[0x0A]);
-	 imageSize = *(int*)&(header[0x22]);
-	 width = *(int*)&(header[0x12]);
-	 height = *(int*)&(header[0x16]);
-	// Some BMP files are misformatted, guess missing information
-	 if (imageSize == 0)    imageSize = width*height * 3; // 3 : one byte for each Red, Green and Blue component
-	 if (dataPos == 0)      dataPos = 54; // The BMP header is done that way
-										   // Create a buffer
-	 data = new unsigned char[imageSize];
-	
-		 // Read the actual data from the file into the buffer
-		 fread(data, 1, imageSize, file);
-	
-		 //Everything is in memory now, the file can be closed
-		 fclose(file);
+	dataPos = *reinterpret_cast<int*>(&(header[0x0A]));
+	imageSize = *reinterpret_cast<int*>(&(header[0x22]));
+	width = *reinterpret_cast<int*>(&(header[0x12]));
+	height = *reinterpret_cast<int*>(&(header[0x16]));
 
-		 return data;
+
+	// Some BMP files are misformatted, guess missing information
+	if (imageSize == 0)
+	{
+		// 24bit image, 1 Byte per channel: one byte for each Red, Green and Blue component
+		imageSize = width*height * 3;
+	}
+
+	// The BMP image offset after the header
+	if (dataPos == 0) {
+		dataPos = 54;
+	}
+
+	// Actual RGB data
+	unsigned char* data = new unsigned char[imageSize];
+
+	// Read the actual data from the file into the buffer
+	fread(data, 1, imageSize, file);
+
+	fclose(file);
+
+	// return the data address
+	return data;
 }
 
 void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces, const vector<point3> &normals) {
-	
+
 	ofstream File;
 	File.open(fileName);
 
@@ -536,12 +557,12 @@ void exportSMF(string fileName, const vector<point3> &vertices, const vector<poi
 	{
 		File << "n" << "  " << normals[i].x << " " << normals[i].y << " " << normals[i].z << endl;
 	}
-	
+
 	for (int i = 0; i < faces.size(); i++) //Write faces
 	{
 		File << "f" << "  " << faces[i].x << " " << faces[i].y << " " << faces[i].z << endl;
 	}
-	
+
 
 	File.close();
 
