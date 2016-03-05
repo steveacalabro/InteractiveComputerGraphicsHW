@@ -337,10 +337,9 @@ void generateTexCoord(vector<point3> &vertices, vector<vec3> &texCoord)
 		double y = (vertices[i].y - minY) / (maxY - minY);
 		double z = (vertices[i].z - minZ) / (maxZ - minZ);
 
-		// convert to -1/2/PI ~ 1/2/PI
-		//double PI = 3.14;
-		//x = (x - 0.5 / PI);
-		//z = (z - 0.5 / PI);
+
+		x = (x - 0.5) / 3.14;
+		z = (z - 0.5) / 3.14;
 		texCoord.push_back(point3(x,y,z));
 	}
 }
@@ -426,7 +425,7 @@ void constructMesh(const vector<point3> &controlPoints, int resolution, Mesh &me
 }
 
 
-int loadImage(char* fileName, Image &image) {
+int loadImage(const char* fileName, Image &image) {
 	fstream file(fileName);
 	string buffer;
 
@@ -447,16 +446,16 @@ int loadImage(char* fileName, Image &image) {
 		// read each element in this line
 		stringstream currentLine(buffer);
 		string currentColumn;
-		vector<color3> temp;
-		vector<float> pixel;
+		vector<color3Byte> temp;
+		vector<GLubyte> pixel;
 		int channel = 0;
 		while (getline(currentLine, currentColumn, ' '))
 		{
-			pixel.push_back(stof(currentColumn)/255.0); //! stod converts string to int
+			pixel.push_back(static_cast<unsigned char>(stoi(currentColumn))); //! stod converts string to int
 			channel++;
 			if(channel == 3)
 			{
-				temp.push_back(color3(pixel[0], pixel[1], pixel[2]));
+				temp.push_back(color3Byte(pixel[0], pixel[1], pixel[2]));
 				col++;
 				pixel.clear();
 				channel = 0;
@@ -476,7 +475,49 @@ int loadImage(char* fileName, Image &image) {
 	
 }
 
+unsigned char * loadBMP(const char* fileName)
+{
+	// Data read from the header of the BMP file
+	unsigned char header[54]; // Each BMP file begins by a 54-bytes header
+	unsigned int dataPos;     // Position in the file where the actual data begins
+	unsigned int width, height;
+	unsigned int imageSize;   // = width*height*3
+	 // Actual RGB data
+	unsigned char * data;
 
+	// Open the file
+	FILE * file = fopen(fileName, "rb");
+	if (!file) { printf("Image could not be opened\n"); return 0; }
+
+	if (fread(header, 1, 54, file) != 54) { // If not 54 bytes read : problem
+		printf("Not a correct BMP file\n");
+		return false;
+	}
+
+	if (header[0] != 'B' || header[1] != 'M') {
+		    printf("Not a correct BMP file\n");
+		    return 0;
+		
+	}
+	// Read ints from the byte array
+	 dataPos = *(int*)&(header[0x0A]);
+	 imageSize = *(int*)&(header[0x22]);
+	 width = *(int*)&(header[0x12]);
+	 height = *(int*)&(header[0x16]);
+	// Some BMP files are misformatted, guess missing information
+	 if (imageSize == 0)    imageSize = width*height * 3; // 3 : one byte for each Red, Green and Blue component
+	 if (dataPos == 0)      dataPos = 54; // The BMP header is done that way
+										   // Create a buffer
+	 data = new unsigned char[imageSize];
+	
+		 // Read the actual data from the file into the buffer
+		 fread(data, 1, imageSize, file);
+	
+		 //Everything is in memory now, the file can be closed
+		 fclose(file);
+
+		 return data;
+}
 
 void exportSMF(string fileName, const vector<point3> &vertices, const vector<point3> &faces, const vector<point3> &normals) {
 	
