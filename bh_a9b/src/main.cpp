@@ -1104,7 +1104,6 @@ void printInstructions()
 	fprintf(stdout, "%d. Press 'R' to reset camera \n", item); item++;
 	fprintf(stdout, "%d. Press 'SPACE' to pause/resume animationn \n", item); item++;
 
-	fprintf(stdout, "%d. Use mouse left click to select object\n", item); item++;
 	fprintf(stdout, "%d. Use mouse right click to change camera's projection mode and shading model\n", item); item++;
 	fprintf(stdout, "%d. Press 'ESC' to exit program \n", item);
 }
