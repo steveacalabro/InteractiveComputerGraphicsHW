@@ -71,6 +71,8 @@ public:
 		//this->bottom = bottom;
 		//this->left = top;
 
+		this->projMatrix = Angel::Perspective(fovy, aspect, zNear, zFar);
+
 		if (!defaultProjSet) {
 			setDefaultProj(fovy, aspect, zNear, zFar);
 			defaultProjSet = true;
@@ -85,7 +87,7 @@ public:
 
 	void updateMatrix() {
 		this->viewMatrix = Angel::LookAt(this->position, this->target, this->up);
-		this->projMatrix = Angel::Perspective(this->fovy, this->aspect, this->zNear, this->zFar);
+		//this->projMatrix = Angel::Perspective(this->fovy, this->aspect, this->zNear, this->zFar);
 		projViewMatrix = projMatrix * viewMatrix;
 	}
 
@@ -104,6 +106,7 @@ public:
 
 	}
 
+	// by default we reset camera to perspective
 	void reset() {
 		this->position = this->resetPosition;
 		this->target = this->resetTarget;
@@ -114,6 +117,7 @@ public:
 		this->zNear = resetZnear;
 		this->zFar = resetZfar;
 
+		this->projMatrix = Angel::Perspective(fovy, aspect, zNear, zFar);
 		updateMatrix();
 	}
 };
