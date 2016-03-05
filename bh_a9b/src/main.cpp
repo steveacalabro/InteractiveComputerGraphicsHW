@@ -1136,8 +1136,15 @@ void initTexture()
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[0].size(),
 	//	image.size(), 0, GL_RGB, GL_FLOAT, &image[0][0][0]);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256,
-		256, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+	//! refer to https://www.opengl.org/wiki/Common_Mistakes
+	//! if we set GL_RGB or GLBGR the driver converts your GL_RGB or GL_BGR to what the GPU prefers, which typically is BGRA.
+	//! so it's better to tell the driver that we have 3 channels, each channle has 8 bits
+	//!  We should also state that on some platforms, such as Windows, GL_BGRA for the pixel upload format is preferred.
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 256, 256, 0, GL_BGR, GL_UNSIGNED_BYTE, image);
+
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, 256,
+	//	256, 0, GL_BGR, GL_UNSIGNED_BYTE, image);
 
 	/*glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 64,0
 		64, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0][0][0]);*/
