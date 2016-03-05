@@ -1183,7 +1183,7 @@ int main(int argc, char **argv)
 	glFrontFace(GL_CCW);
 
 	///********* main window  ****************/ 
-	mainWindow = createOpenGLContext("ICG HW8 - Picking", 200, 0, 500, 500);
+	mainWindow = createOpenGLContext("ICG HW9b - 3D procedural texturing", 200, 0, 500, 500);
 
 	glEnable(GL_DEPTH_TEST); //! Depth test must be enabled after the glewInit(), or it doesn't work
 	assignGlutFunctions(displayMainWindow, myKeyboard, myMouse, nullptr, nullptr, myIdle, createAnimationMenus);
