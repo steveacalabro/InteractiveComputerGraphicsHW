@@ -1,11 +1,12 @@
-CS537 Homework Assignment 7: Bezier Patch
+CS537 Homework Assignment 9a: 2D Texture Mapping
+====================
 Author: Bingyao Huang
-Date: 02/26/2016
+Date: 03/05/2016
 Language: C++
 
 
 
-This code loads 16 Bezier control points from a txt file and render the Bezir control points, Bezir patch and three axis. The scene is viewed in 3 different projection modes (perspective, orthographic and parallel). Two point lights sources are placed in the scene, one is defined in model space and the other in view space. Flat, Gouraud and Phong shading models are implemented.
+This code loads 16 Bezier control points from a txt file and render the Bezir control points, a checker board textured Bezir patch and three axis. The scene is viewed in 3 different projection modes (perspective, orthographic and parallel). Two point lights sources are placed in the scene, one is defined in model space and the other in view space. Flat, Gouraud and Phong shading models are implemented.
 
 
 A rotating camera view of the model is displayed. The camera rotates on a cylinder around the model. Allow the user to interactively change the height, the orbit radius and speed of the camera. The camera rotates around and look at the smf model (i.e. your LookAt point stays constant). The light that defined in model space also rotates on a cylinder around the model. The user can change the orbit radius, light location along the cylinder and angle around the cylinder.
@@ -26,13 +27,13 @@ A rotating camera view of the model is displayed. The camera rotates on a cylind
 13. Use mouse right click to change camera's projection mode, material and shading model
 14. Press 'ESC' to exit program
 
-Contents:
+###Contents:
 	source files: src\*.cpp
 	makefile: Makefile
 	library folder: include
 	
 
-Usage:	
+###Usage:	
 	make: the default target compiles all the code
 	make run: executes the program(s)
 	make clean: deletes all the object files and executable files.
