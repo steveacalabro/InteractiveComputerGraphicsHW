@@ -27,7 +27,7 @@ struct color3Byte
 	//  --- Constructors and Destructors ---
 	//
 
-	color3Byte(GLubyte s = GLubyte(255)) :
+	color3Byte(GLubyte s = GLubyte(0)) :
 		x(s), y(s), z(s) {}
 
 	color3Byte(GLubyte x, GLubyte y, GLubyte z) :
@@ -39,7 +39,7 @@ struct color3Byte
 	//  --- Indexing Operator ---
 	//
 	GLubyte& operator [] (int i) { return *(&x + i); }
-	const color3Byte operator [] (int i) const { return *(&x + i); }
+	const GLubyte operator [] (int i) const { return *(&x + i); }
 };
 
 typedef vector<vector<color3Byte>> Image;
