@@ -62,11 +62,11 @@ bool stopAnimation = false;
 enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
 enum {METAL, PLASTIC, GOLD };
 enum { GOURAUD, PHONG, FLAT};
-
+enum { CYLINDER = 2, PLANE = 3 };
 int materialOption{ METAL };
 int shaderOption{ PHONG };
 
-
+int texMappingOption{ CYLINDER };
 
 template <typename T>
 GLuint initVBO(const T *vertexData, const int numPoints, const bool isDynamic)
@@ -241,6 +241,13 @@ void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.pol
 		// send shader option to shader
 		GLuint u_shadingModel = glGetUniformLocation(shaderProgram, "u_shadingModel");
 		glUniform1i(u_shadingModel, shaderOption);
+
+
+		// send shader option to shader
+		GLuint u_texMappingModel = glGetUniformLocation(shaderProgram, "u_texMappingModel");
+		glUniform1i(u_texMappingModel, texMappingOption);
+
+
 		glBindVertexArray(vao);
 	}
 	else if (shaderProgram == program.pickingShader) {
@@ -429,7 +436,22 @@ void shadingMenu(int option)
 	glutPostRedisplay();
 }
 
+void texMappingMenu(int option)
+{
+	switch (option)
+	{
+	case CYLINDER:
+		texMappingOption = CYLINDER;
+		fprintf(stdout, " Set texture mapping to cylindrical\n");
+		break;
 
+	case PLANE:
+		texMappingOption = PLANE;
+		fprintf(stdout, " Set texture mapping to planar\n");
+		break;
+	}
+	glutPostRedisplay();
+}
 
 void parentMenu(int option)
 {
@@ -440,6 +462,7 @@ void createAnimationMenus() {
 	GLuint projectionSubMenu;
 	GLuint materialSubMenue;
 	GLuint shadingSubMenue;
+	GLuint texMappingSubMenu;
 
 
 	// projection mode
@@ -462,14 +485,19 @@ void createAnimationMenus() {
 	glutAddMenuEntry("Phong", PHONG);
 	glutAddMenuEntry("Flat", FLAT);
 
-	
+	// texture mapping model
+	texMappingSubMenu = glutCreateMenu(texMappingMenu);
+	glutAddMenuEntry("Cylindrical", CYLINDER);
+	glutAddMenuEntry("Planar", PLANE);
 
-	// create a parent menu
+
+	// create a parent menu and add entries to parent menu
 	glutCreateMenu(parentMenu);
 	glutAddSubMenu("Projection Mode", projectionSubMenu);
 	glutAddSubMenu("Shading Model", shadingSubMenue);
 	glutAddSubMenu("Material", materialSubMenue);
-	// add entries to parent menu
+	glutAddSubMenu("Texture mapping Model", texMappingSubMenu);
+	
 	
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
@@ -916,10 +944,10 @@ void initModel(){
 		char* octahedronPath = "./resources/octahedron.smf";
 	#elif _WIN32
 		
-		//char* bounnyPath = "..\\src\\resources\\bound-bunny_1k.smf";
-		char* bounnyPath = "..\\src\\resources\\icos.smf";
-		char* icosPath = "..\\src\\resources\\icos.smf";
-		char* octahedronPath = "..\\src\\resources\\octahedron.smf";
+		char* bounnyPath = "..\\src\\resources\\bound-bunny_1k.smf";
+		//char* bounnyPath = "..\\src\\resources\\icos.smf";
+		//char* icosPath = "..\\src\\resources\\icos.smf";
+		//char* octahedronPath = "..\\src\\resources\\octahedron.smf";
 		
 	#endif
 
@@ -1083,7 +1111,7 @@ void initPickingFBO() {
 
 void initTexture()
 {
-	
+	/**************checker board image ******************/
 	//GLubyte image[64][64][3];
 	// Create a 64 x 64 checkerboard pattern
 	//for (int i = 0; i < 64; i++) {
@@ -1098,7 +1126,7 @@ void initTexture()
 	//Image image;
 	//loadImage(imagePath, image);
 
-
+	/************** BMP texture image ******************/
 	char* imagePath = "..\\src\\resources\\wood.bmp";
 	unsigned char * image = loadBMP(imagePath);
 

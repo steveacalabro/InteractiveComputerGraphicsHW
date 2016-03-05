@@ -154,7 +154,6 @@ void main()
 	else if(u_texMappingModel == PLANE){
 		texUV = planeCoord;
 	}
-	texUV = cylinderCoord;
 	vec3 textureColor = texture2D(texture, texUV).rgb;
 
 	gl_FragColor = vec4(fragColor.rgb*textureColor, 1.0);
