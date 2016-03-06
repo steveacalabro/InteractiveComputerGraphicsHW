@@ -90,7 +90,14 @@ public:
 
 	color3 objectColor[3];
 	Material material;
+
+	// a pointer to its parent
+	MeshObject *parent = nullptr;
+
+
 	// transformation matrices
+	//! these matrics are defined in model space, so to transform to World space, should multiply by parent's matrix
+	//! i.e., parent.compositeMatrix*this.compositeMatrix
 	mat4 scaleMatrix = Angel::identity();
 	mat4 rotationMatrix = Angel::identity();
 	mat4 translationMatrix = Angel::identity();
