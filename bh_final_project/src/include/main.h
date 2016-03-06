@@ -37,7 +37,7 @@ template <typename T>
 GLuint initEBO(const T *indices, const int numElements, const bool isDynamic);
 
 
-void initAttributeVariable(const GLuint &program, const std::string a_attribute, const GLuint buffer, const int numComponents);
+void initAttributeVariable(const GLuint &program, const string a_attribute, const GLuint buffer, const int numComponents);
 
 template <typename T1, typename T2>
 VertexArrayObject initVAO(const GLuint program, const T1 *verts, const T2 *indices, const int numPoints, const int numElements, const bool isDynamic);
