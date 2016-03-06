@@ -76,6 +76,8 @@ int materialOption{ METAL };
 int shaderOption{ PHONG };
 int texMappingOption{ CYLINDER };
 
+
+float *currentState = &arm3.translationMatrix[1][3];  // y 
 template <typename T>
 GLuint initVBO(const T *vertexData, const int numPoints, const bool isDynamic)
 {
@@ -562,6 +564,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 1 seleted \n");
+			currentState = &arm1.translationMatrix[0][3];
 		}
 		// if hit arm1
 		else if (pixels[1] == 255) {
@@ -569,6 +572,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 2 seleted \n");
+			currentState = &arm2.translationMatrix[0][3];
 		}
 		// if hit arm2
 		else if (pixels[2] == 255) {
@@ -576,6 +580,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 3 seleted \n");
+			currentState = &arm3.translationMatrix[1][3];
 		}
 		// if hit the background
 		else
@@ -584,6 +589,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "No object selected \n");
+			currentState = nullptr;
 		}
 	}
 
@@ -648,6 +654,21 @@ void myKeyboard(unsigned char key, int x, int y)
 	case 'n':case 'N': lightAngle -= theta;
 		fprintf(stdout, "Light angle decreased, now is %2f\n", lightAngle); break;
 
+
+		// robot arm angle 
+	case 't':case 'T': 
+		if(currentState)
+		{
+			*currentState += 0.5;
+			fprintf(stdout, "Light Y position increased, now is %2f\n", *currentState); break;
+		}
+			
+	case 'y':case 'Y': 
+		if (currentState)
+		{
+			*currentState -= 0.5;
+			fprintf(stdout, "Light Y position increased, now is %2f\n", *currentState); break;
+		}
 
 
 	//	// reset camera view and projection
