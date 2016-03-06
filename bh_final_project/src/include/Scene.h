@@ -36,7 +36,7 @@ public:
 		compositeMatrix = Angel::identity();
 	}
 	void updateMatrix() {
-		compositeMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+		compositeMatrix = scaleMatrix* translationMatrix * rotationMatrix;
 	}
 
 };
