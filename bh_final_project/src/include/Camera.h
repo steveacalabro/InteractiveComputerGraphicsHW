@@ -4,10 +4,9 @@
 #include "Angel.h"
 
 class Camera {
-private:
-	vec4 position = vec4();
+	/*vec4 position = vec4();
 	vec4 target = vec4();
-	vec4 up = vec4();
+	vec4 up = vec4();*/
 
 	vec4 resetPosition = vec4();
 	vec4 resetTarget = vec4();
@@ -25,6 +24,10 @@ private:
 	bool defaultProjSet{ false };
 
 public:
+	vec4 position = vec4();
+	vec4 target = vec4();
+	vec4 up = vec4();
+
 	mat4 projMatrix = Angel::identity();
 	mat4 viewMatrix = Angel::identity();
 	mat4 projViewMatrix = Angel::identity();
