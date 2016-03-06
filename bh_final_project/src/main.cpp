@@ -52,8 +52,8 @@ MeshObject arm1;
 MeshObject arm2;
 MeshObject arm3;
 
-
-int selectedObj = 0;
+enum {BACKGOURND, ARM1, ARM2, ARM3};
+int selectedObj = BACKGOURND;
 double armRotSpeed{ 10.0 };
 
 double camRadius{ 6.0 }, camY{ 3.0 };
@@ -598,7 +598,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 1 seleted \n");
 
-			selectedObj = 1;
+			selectedObj = ARM1;
 			currentState = nullptr;
 		}
 		// if hit arm1
@@ -607,7 +607,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 2 seleted \n");
-			selectedObj = 2;
+			selectedObj = ARM2;
 			currentState = nullptr;
 		}
 		// if hit arm2
@@ -616,7 +616,8 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 3 seleted \n");
-			selectedObj = 3;
+
+			selectedObj = ARM3;
 			currentState = &arm3.translationMatrix[1][3];
 		}
 		// if hit the background
@@ -627,7 +628,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "No object selected \n");
 			currentState = nullptr;
-			selectedObj = 0;
+			selectedObj = BACKGOURND;
 		}
 	}
 
@@ -697,22 +698,31 @@ void myKeyboard(unsigned char key, int x, int y)
 	case 't':case 'T':
 		if (currentState)
 		{
-			*currentState += 0.5;
-			fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState); break;
+			// selected arm3
+			if (*currentState < 39)
+			{
+				*currentState += 2.0;
+				fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState);
+				break;
+			}
+			else
+			{
+				fprintf(stdout, "Arm3 translation reach limit \n");
+			}
 		}
-		if (selectedObj == 1)
+		if (selectedObj == ARM1)
 		{
 			arm1.rotate(0, armRotSpeed, 0);
+			fprintf(stdout, "rotate arm1 \n");
 			break;
 		}
-		else if (selectedObj == 2)
+		if (selectedObj == ARM2)
 		{
 
-			
-			
 			if(armRotSpeed*rotateCount < 260)
 			{
 				arm2.rotate(0, armRotSpeed, 0);
+				fprintf(stdout, "rotate arm2 \n"); 
 				rotateCount++;
 			}else
 			{
@@ -723,22 +733,34 @@ void myKeyboard(unsigned char key, int x, int y)
 		}
 
 	case 'y':case 'Y':
+		
 		if (currentState)
 		{
-			*currentState -= 0.5;
-			fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState); break;
+			// selected arm3
+			if(*currentState > -39)
+			{
+				*currentState -= 2.0;
+				fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState);
+				break;
+			}
+			else
+			{
+				fprintf(stdout, "Arm3 translation reach limit \n");
+			}
 		}
-		if (selectedObj == 1)
+		if (selectedObj == ARM1)
 		{
 			arm1.rotate(0, -armRotSpeed, 0);
+			fprintf(stdout, "rotate arm1 \n");
 			break;
 		}
-		if (selectedObj == 2)
+		if (selectedObj == ARM2)
 		{
 		
 			if (armRotSpeed*rotateCount > -80)
 			{
 				arm2.rotate(0, -armRotSpeed, 0);
+				fprintf(stdout, "rotate arm2 \n"); 
 				rotateCount--;
 			}
 			else
@@ -1137,6 +1159,8 @@ void initModel() {
 
 	// set the scale matrix of the scene, since the models units are in mm, and world scale is -1 ~ 1
 	scene.scale(0.005, 0.005, 0.005);
+
+	scene.translate(219, 9, -486);
 
 }
 
