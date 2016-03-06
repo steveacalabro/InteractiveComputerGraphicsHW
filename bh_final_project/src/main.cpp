@@ -54,7 +54,7 @@ MeshObject arm3;
 
 enum {BACKGOURND, ARM1, ARM2, ARM3};
 int selectedObj = BACKGOURND;
-double armRotSpeed{ 10.0 };
+double armRotSpeed{ 5.0 };
 
 double camRadius{ 1.1 }, camY{ 3.0 };
 double speed{ 0.1 };
@@ -699,7 +699,7 @@ void myKeyboard(unsigned char key, int x, int y)
 		if (currentState)
 		{
 			// selected arm3
-			if (*currentState < 39)
+			if (*currentState < 40)
 			{
 				*currentState += 2.0;
 				fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState);
@@ -707,7 +707,7 @@ void myKeyboard(unsigned char key, int x, int y)
 			}
 			else
 			{
-				fprintf(stdout, "Arm3 translation reach limit \n");
+				fprintf(stdout, "Arm3 translation reach limit \n"); break;
 			}
 		}
 		if (selectedObj == ARM1)
@@ -737,15 +737,15 @@ void myKeyboard(unsigned char key, int x, int y)
 		if (currentState)
 		{
 			// selected arm3
-			if(*currentState > -39)
+			if(-40 <= *currentState)
 			{
 				*currentState -= 2.0;
-				fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState);
+				fprintf(stdout, "Arm3 Y position decreased, now is %2f\n", *currentState);
 				break;
 			}
 			else
 			{
-				fprintf(stdout, "Arm3 translation reach limit \n");
+				fprintf(stdout, "Arm3 translation reach limit \n"); break;
 			}
 		}
 		if (selectedObj == ARM1)
@@ -1253,18 +1253,21 @@ void printInstructions()
 
 
 	int item = 1;
-	fprintf(stdout, "%d. Press 'W', 'S' for increasing and decreasing the camera's Y position \n", item); item++;
-	fprintf(stdout, "%d. Press 'A', 'D' for increasing and decreasing the camera's rotation raidus \n", item); item++;
-	fprintf(stdout, "%d. Press 'Q', 'E' to increasing and decreasing the camera's rotation speed \n", item); item++;
+	fprintf(stdout, "%d. Press 'W', 'S' for + and - the camera's Y position \n", item); item++;
+	fprintf(stdout, "%d. Press 'A', 'D' for + and - the camera's rotation raidus \n", item); item++;
+	fprintf(stdout, "%d. Press 'Q', 'E' to + and - the camera's rotation speed \n", item); item++;
 
-	fprintf(stdout, "%d. Press 'Z', 'X' to increasing and decreasing the light's rotation raidus \n", item); item++;
-	fprintf(stdout, "%d. Press 'C', 'V' to increasing and decreasing the light's Y position \n", item); item++;
-	fprintf(stdout, "%d. Press 'B', 'N' to increasing and decreasing the light's rotation anglen \n", item); item++;
+	fprintf(stdout, "%d. Use mouse left click to pick arm for transformation \n", item); item++;
+	fprintf(stdout, "%d. Press 'T', 'Y' for + and - the selected arm's parameter \n", item); item++;
+
+	fprintf(stdout, "%d. Press 'Z', 'X' to + and - the light's rotation raidus \n", item); item++;
+	fprintf(stdout, "%d. Press 'C', 'V' to + and - the light's Y position \n", item); item++;
+	fprintf(stdout, "%d. Press 'B', 'N' to + and - the light's rotation anglen \n", item); item++;
 
 	fprintf(stdout, "%d. Press 'R' to reset camera \n", item); item++;
 	fprintf(stdout, "%d. Press 'SPACE' to pause/resume animationn \n", item); item++;
 
-	fprintf(stdout, "%d. Use mouse right click to change camera's projection mode and shading model\n", item); item++;
+	fprintf(stdout, "%d. Use mouse right click to change multiple rendering paramters \n", item); item++;
 	fprintf(stdout, "%d. Press 'ESC' to exit program \n", item);
 }
 
