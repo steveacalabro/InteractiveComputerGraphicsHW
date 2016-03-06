@@ -11,7 +11,7 @@ uniform mat4 u_MV;
 
 uniform vec4 u_lightPos;
 uniform int u_material;
-uniform vec3 u_Color;
+//uniform vec3 u_Color;
 uniform int u_shadingModel;
 
 // defined in view space

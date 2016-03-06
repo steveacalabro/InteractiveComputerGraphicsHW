@@ -251,7 +251,7 @@ void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.pol
 		glUniform1i(u_shadingModel, shaderOption);
 
 
-		// send shader option to shader
+		// send texture mapping option to shader
 		GLuint u_texMappingModel = glGetUniformLocation(shaderProgram, "u_texMappingModel");
 		glUniform1i(u_texMappingModel, texMappingOption);
 
@@ -352,16 +352,17 @@ void renderToPickingBuffer() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, winWidth, winHeight);
 
-	renderMeshObject(base, program.pickingShader);
-	//renderMeshObject(arm1, program.pickingShader);
-	//renderMeshObject(arm2, program.pickingShader);
+	//renderMeshObject(base, program.pickingShader);
+	renderMeshObject(arm1, program.pickingShader);
+	renderMeshObject(arm2, program.pickingShader);
+	renderMeshObject(arm3, program.pickingShader);
 
 }
 
 void render() {
 
 	updateScene();
-	//renderToPickingBuffer();
+	renderToPickingBuffer();
 	renderToBackBuffer();
 
 }
@@ -557,28 +558,32 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 
 		// if hit base
 		if (pixels[0] == 255) {
-			base.objectColor[RENDER] = base.objectColor[PICKED];
-			arm1.objectColor[RENDER] = arm1.objectColor[ORIGINAL];
-			arm2.objectColor[RENDER] = arm2.objectColor[ORIGINAL];
+			arm1.objectColor[RENDER] = arm1.objectColor[PICKED];
+			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			fprintf(stdout, "arm 1 seleted \n");
 		}
 		// if hit arm1
 		else if (pixels[1] == 255) {
-			arm1.objectColor[RENDER] = arm1.objectColor[PICKED];
-			base.objectColor[RENDER] = base.objectColor[ORIGINAL];
-			arm2.objectColor[RENDER] = arm2.objectColor[ORIGINAL];
+			arm2.objectColor[RENDER] = arm2.objectColor[PICKED];
+			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			fprintf(stdout, "arm 2 seleted \n");
 		}
 		// if hit arm2
 		else if (pixels[2] == 255) {
-			arm2.objectColor[RENDER] = base.objectColor[PICKED];
-			base.objectColor[RENDER] = base.objectColor[ORIGINAL];
-			arm1.objectColor[RENDER] = arm1.objectColor[ORIGINAL];			
+			arm3.objectColor[RENDER] = arm3.objectColor[PICKED];
+			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			fprintf(stdout, "arm 3 seleted \n");
 		}
 		// if hit the background
 		else
 		{
-			base.objectColor[RENDER] = base.objectColor[ORIGINAL];
-			arm1.objectColor[RENDER] = arm1.objectColor[ORIGINAL];
-			arm2.objectColor[RENDER] = arm2.objectColor[ORIGINAL];
+			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+			fprintf(stdout, "No object selected \n");
 		}
 	}
 
@@ -992,8 +997,8 @@ void initModel(){
 
 	loadSFM(basePath, base.mesh);
 	initMesh(base);
-	base.scale(0.01, 0.01, 0.01);
-	base.objectColor[ORIGINAL] = color3(1.0, 0.0, 0.0);
+	base.scale(0.005, 0.005, 0.005);
+	base.objectColor[ORIGINAL] = color3(1.0, 1.0, 1.0);
 	base.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
 	base.objectColor[RENDER] = base.objectColor[ORIGINAL];
 	//base.material.kd = base.objectColor[RENDER];
@@ -1001,26 +1006,26 @@ void initModel(){
 
 	loadSFM(arm1Path, arm1.mesh);
 	initMesh(arm1);
-	arm1.scale(0.01, 0.01, 0.01);
-	arm1.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
-	arm1.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
-	arm1.objectColor[RENDER] = arm1.objectColor[ORIGINAL];
+	arm1.scale(0.005, 0.005, 0.005);
+	arm1.objectColor[ORIGINAL] = color3(1.0, 0.0, 0.0);
+	arm1.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
+	arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 	arm1.translate(0.0, 2.0, 0.5);
 
 	loadSFM(arm2Path, arm2.mesh);
 	initMesh(arm2);
-	arm2.scale(0.01, 0.01, 0.01);
-	arm2.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
-	arm2.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
-	arm2.objectColor[RENDER] = arm2.objectColor[ORIGINAL];
+	arm2.scale(0.005, 0.005, 0.005);
+	arm2.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
+	arm2.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
+	arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 
 
 	loadSFM(arm3Path, arm3.mesh);
 	initMesh(arm3);
-	arm3.scale(0.01, 0.01, 0.01);
+	arm3.scale(0.005, 0.005, 0.005);
 	arm3.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
-	arm3.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
-	arm3.objectColor[RENDER] = arm3.objectColor[ORIGINAL];
+	arm3.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
+	arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 
 }
 
@@ -1240,7 +1245,7 @@ void initScene() {
 
 	initCamera(camera, PERSPECTIVE);
 
-	//initPickingFBO();
+	initPickingFBO();
 
 }
 

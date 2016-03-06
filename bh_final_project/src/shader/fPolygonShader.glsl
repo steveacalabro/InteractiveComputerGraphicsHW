@@ -156,7 +156,8 @@ void main()
 	}
 	vec3 textureColor = texture2D(texture, texUV).rgb;
 
-	gl_FragColor = vec4(fragColor.rgb*textureColor, 1.0);
+	gl_FragColor = vec4(fragColor.rgb*textureColor*u_Color, 1.0);
+	//gl_FragColor = vec4(u_Color, 1.0);
 
 }
 
@@ -178,9 +179,7 @@ vec4 diffuseColor(Light light, Material material, Fragment fragment){
 	// diffuse = Id * kd * cos(theta)
 	vec4 diffuse = light.diffuse * material.kd * clamp(lightDotNormal, 0.0, 1.0);
 
-	// add some turbulence on diffuse
-	float noise = turbulence(fragment.normal.xyz);
-	return diffuse*noise;
+	return diffuse;
 }
 
 // Blinn Phong specular
