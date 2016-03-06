@@ -211,44 +211,40 @@ void initShaderProgram(void)
 }
 
 
+// recursive compostive model transformation, from the lowest level to the highest level
+void transformToWorld(MeshObject &meshObject, mat4 &finalMatrix)
+{
 
+	// if it has a parent
+	if(meshObject.parent)
+	{
+		transformToWorld(*meshObject.parent, finalMatrix);
+	}
+
+	//! the multiplication is from left to right, i.e., parent's parent * parent* self, 
+	//! so the muliplication should start from the upper most parent to the lower most
+	finalMatrix *= meshObject.compositeMatrix;
+}
 
 
 //----------------------------------------------------------------------------
-void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.polygonShader, int level = 1) {
+void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.polygonShader) {
 	glUseProgram(shaderProgram);
 	
 	meshObject.updateMatrix();
-	mat4 &scaleMatrix = meshObject.scaleMatrix;
-	mat4 &translationMatrix = meshObject.translationMatrix;
+	Mesh &mesh = meshObject.mesh;
 
 	GLuint &vao = meshObject.vao.id;
 	GLuint &pickingVao = meshObject.pickingVao.id;
 	vec3 orgSurfaceColor = meshObject.objectColor[RENDER];
 
-	Mesh &mesh = meshObject.mesh;
+	// recursive compostive model transformation
+	mat4 finalModelMatrix;
+	transformToWorld(meshObject, finalModelMatrix);
 	
-	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix*meshObject.compositeMatrix;
-	mat4 MV = camera.viewMatrix * scene.compositeMatrix * scaleMatrix;
-	// parent transformation
-	if (level == 1)
-	{
-		MVP = camera.projViewMatrix * scene.compositeMatrix *meshObject.compositeMatrix;
-	}
-	else if (level == 2)
-	{
-		mat4 modelMatrix = arm1.scaleMatrix*arm1.translationMatrix*arm1.rotationMatrix*meshObject.translationMatrix*meshObject.rotationMatrix;		
-		MVP = camera.projViewMatrix * scene.compositeMatrix *modelMatrix;
-		MV = camera.viewMatrix * scene.compositeMatrix * modelMatrix;
-
-	}
-	else if (level == 3)
-	{
-		mat4 modelMatrix = arm1.scaleMatrix*arm1.translationMatrix*arm1.rotationMatrix*arm2.translationMatrix*arm2.rotationMatrix*meshObject.translationMatrix*meshObject.rotationMatrix;
-		MVP = camera.projViewMatrix * scene.compositeMatrix *modelMatrix;
-		MV = camera.viewMatrix * scene.compositeMatrix * modelMatrix;
-	}
-
+	// contruct modelview and modelviewProjection matrix
+	mat4 MV = camera.viewMatrix * scene.compositeMatrix * finalModelMatrix;
+	mat4 MVP = camera.projMatrix * MV;
 	
 
 	// send model view projection matrix to shader
@@ -306,7 +302,8 @@ void renderAxis() {
 
 	mat4 scaleMatrix = Angel::Scale(2.0, 2.0, 2.0);
 
-	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix;
+	// axis is defined in World space not need to apply scene.compositeMatrix
+	mat4 MVP = camera.projViewMatrix  * scaleMatrix;
 
 	// send model view projection matrix to shader
 	GLuint u_MVP = glGetUniformLocation(program.lineShader, "u_MVP");
@@ -356,6 +353,10 @@ void updateScene() {
 	// update MVP
 	camera.updateMatrix();
 	scene.updateMatrix();
+	base.updateMatrix();
+	arm1.updateMatrix();
+	arm2.updateMatrix();
+	arm3.updateMatrix();
 
 	// update light rotation and height
 	lightX = rotationCenterX + lightRadius*cos(DegreesToRadians * lightAngle);
@@ -368,9 +369,9 @@ void renderToBackBuffer() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	renderMeshObject(base);
-	renderMeshObject(arm1, program.polygonShader,1);
-	renderMeshObject(arm2, program.polygonShader, 2);
-	renderMeshObject(arm3, program.polygonShader, 3);
+	renderMeshObject(arm1, program.polygonShader);
+	renderMeshObject(arm2, program.polygonShader);
+	renderMeshObject(arm3, program.polygonShader);
 	renderAxis();
 }
 
@@ -382,9 +383,9 @@ void renderToPickingBuffer() {
 	glViewport(0, 0, winWidth, winHeight);
 
 	//renderMeshObject(base, program.pickingShader);
-	renderMeshObject(arm1, program.pickingShader, 1);
-	renderMeshObject(arm2, program.pickingShader, 2);
-	renderMeshObject(arm3, program.pickingShader, 3);
+	renderMeshObject(arm1, program.pickingShader);
+	renderMeshObject(arm2, program.pickingShader);
+	renderMeshObject(arm3, program.pickingShader);
 
 }
 
@@ -1083,8 +1084,7 @@ void initModel() {
 	char* arm1Path = "..\\src\\resources\\arm1.obj";
 	char* arm2Path = "..\\src\\resources\\arm2.obj";
 	char* arm3Path = "..\\src\\resources\\arm3.obj";
-	//char* icosPath = "..\\src\\resources\\arm1.smf";
-	//char* octahedronPath = "..\\src\\resources\\arm2.smf";
+
 
 #endif
 
@@ -1094,29 +1094,26 @@ void initModel() {
 	base.objectColor[ORIGINAL] = color3(1.0, 1.0, 1.0);
 	base.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
 	base.objectColor[RENDER] = base.objectColor[ORIGINAL];
-	//base.material.kd = base.objectColor[RENDER];
-	//base.translate(1.0, -1.0, -2.0);
+
 
 	loadSFM(arm1Path, arm1.mesh);
 	initMesh(arm1);
 	arm1.modelOrigin = vec3(-243, -9, 486);
 
 	//! careful, this translation matrix is from child model space to parent model space
-	arm1.translate(arm1.modelOrigin);
-	arm1.scale(0.005, 0.005, 0.005);
+
+	arm1.translate(arm1.modelOrigin); // since arm1 does not have a parent, its parent is World
 	arm1.objectColor[ORIGINAL] = color3(1.0, 0.0, 0.0);
 	arm1.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
 	arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
-	arm1.translate(0.0, 2.0, 0.5);
 
 	loadSFM(arm2Path, arm2.mesh);
 	initMesh(arm2);
+	//! origin in world space
 	arm2.modelOrigin = vec3(-243, 0, 0);
-
-	//arm2.translate(arm2.modelOrigin);
+	arm2.parent = &arm1;
 	//! careful, this translation matrix is from child model space to parent model space
-	arm2.translate(arm2.modelOrigin - arm1.modelOrigin);
-	arm2.scale(0.005, 0.005, 0.005);
+	arm2.translate(arm2.modelOrigin - (*arm2.parent).modelOrigin); // arm2's parent is arm1
 	arm2.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
 	arm2.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
 	arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
@@ -1125,10 +1122,10 @@ void initModel() {
 	loadSFM(arm3Path, arm3.mesh);
 	initMesh(arm3);
 	arm3.modelOrigin = vec3(219, 60, 8.92);
-	//arm3.translate(arm3.modelOrigin);
+	arm3.parent = &arm2;
+
 	//! careful, this translation matrix is from child model space to parent model space
-	arm3.translate(arm3.modelOrigin - arm2.modelOrigin);
-	arm3.scale(0.005, 0.005, 0.005);
+	arm3.translate(arm3.modelOrigin - (*arm3.parent).modelOrigin); // arm3's parent is arm3
 	arm3.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
 	arm3.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
 	arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
