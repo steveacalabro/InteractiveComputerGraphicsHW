@@ -56,10 +56,10 @@ enum {BACKGOURND, ARM1, ARM2, ARM3};
 int selectedObj = BACKGOURND;
 double armRotSpeed{ 10.0 };
 
-double camRadius{ 6.0 }, camY{ 3.0 };
+double camRadius{ 1.1 }, camY{ 3.0 };
 double speed{ 0.1 };
 
-double lightRadius{ 6.0 }, lightX{ 0.0 }, lightY{ 0.0 }, lightZ{ 0.0 }, lightAngle{ 0.0 };
+double lightRadius{ 3.0 }, lightX{ 0.0 }, lightY{ 0.0 }, lightZ{ 0.0 }, lightAngle{ 0.0 };
 
 
 
@@ -1102,9 +1102,10 @@ void initModel() {
 	glUseProgram(program.polygonShader);
 
 #ifdef __linux__ 
-	char* bounnyPath = "./resources/bound-bunny_1k.smf";
-	char* icosPath = "./resources/arm1.smf";
-	char* octahedronPath = "./resources/arm2.smf";
+	char* basePath = "./resources/base.obj";
+	char* arm1Path = "./resources/arm1.obj";
+	char* arm2Path = "./resources/arm2.obj";
+	char* arm3Path = "./resources/arm3.obj";
 #elif _WIN32
 
 	char* basePath = "..\\src\\resources\\base.obj";
@@ -1125,7 +1126,7 @@ void initModel() {
 
 	loadSFM(arm1Path, arm1.mesh);
 	initMesh(arm1);
-	arm1.modelOrigin = vec3(-243, -9, 486);
+	arm1.modelOrigin = vec3(-245, -9, 455);
 
 	//! careful, this translation matrix is from child model space to parent model space
 
