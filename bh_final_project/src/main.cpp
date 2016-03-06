@@ -56,7 +56,7 @@ MeshObject arm3;
 int selectedObj = 0;
 double armRotSpeed{ 10.0 };
 
-double camRadius{ 6.0 }, camY{ 0.0 };
+double camRadius{ 6.0 }, camY{ 3.0 };
 double speed{ 0.1 };
 
 double lightRadius{ 6.0 }, lightX{ 0.0 }, lightY{ 0.0 }, lightZ{ 0.0 }, lightAngle{ 0.0 };
@@ -300,7 +300,7 @@ void renderAxis() {
 	glUseProgram(program.lineShader);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	mat4 scaleMatrix = Angel::Scale(2.0, 2.0, 2.0);
+	mat4 scaleMatrix = Scale(2.0, 2.0, 2.0);
 
 	// axis is defined in World space not need to apply scene.compositeMatrix
 	mat4 MVP = camera.projViewMatrix  * scaleMatrix;
@@ -318,8 +318,8 @@ void renderAxis() {
 void rendeControlPoints() {
 	initControlPoints();
 
-	mat4 scaleMatrix = Angel::Scale(0.5, 0.5, 0.5);
-	mat4 translationMatrix = Angel::Translate(-2.0, -2.0, 0.0);
+	mat4 scaleMatrix = Scale(0.5, 0.5, 0.5);
+	mat4 translationMatrix = Translate(-2.0, -2.0, 0.0);
 	glUseProgram(program.lineShader);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
@@ -344,11 +344,16 @@ void updateScene() {
 
 	double camX = rotationCenterX + camRadius*cos(DegreesToRadians * 90 + angle);
 	double camZ = rotationCenterZ + camRadius*sin(DegreesToRadians * 90 + angle);
+
 	vec4 camPos = vec4(camX, camY, camZ, 1.0);
 	vec4 camTarget = vec4(0.0, 0.0, 0.0, 1.0);
 	vec4 camUp = vec4(0.0, 1.0, 0.0, 0.0);
 
-	camera.LookAt(camPos, camTarget, camUp);
+	camera.position = camPos;
+	camera.target = camTarget;
+	camera.up = camUp;
+
+	//camera.LookAt(camPos, camTarget, camUp);
 
 	// update MVP
 	camera.updateMatrix();
@@ -1139,11 +1144,12 @@ void initModel() {
 
 void initCamera(Camera &camera, int option)
 {
-	// init camera view matrix
-	vec3 cameraPosition = vec3(0.0, 2.5, 10.0);
+
+	// init camera view matrix is done in updateScene
+	/*vec3 cameraPosition = vec3(0.0, 0.0, 10.0);
 	vec3 cameraTarget = vec3(0.0, 0.0, 0.0);
 	vec3 cameraUp = vec3(0.0, 1.0, 0.0);
-	camera.LookAt(cameraPosition, cameraTarget, cameraUp);
+	camera.LookAt(cameraPosition, cameraTarget, cameraUp);*/
 
 	setCamProjection(camera, option);
 }
