@@ -36,7 +36,7 @@ int mainWindow;
 
 int winWidth{ 800 }, winHeight{ 600 };
 
-enum class VBO_OPTION{ VERTEX, COLOR };
+enum class VBO_OPTION { VERTEX, COLOR };
 
 // for right click menu
 bool onPerspective{ true };
@@ -52,6 +52,10 @@ MeshObject arm1;
 MeshObject arm2;
 MeshObject arm3;
 
+
+int selectedObj = 0;
+double armRotSpeed{ 10.0 };
+
 double camRadius{ 6.0 }, camY{ 0.0 };
 double speed{ 0.1 };
 
@@ -63,9 +67,9 @@ double t{ 0.0 }, dt{ 0.01 };
 //double angle{ 0.0 };
 bool stopAnimation = false;
 
-enum {PERSPECTIVE, ORTHOGRAPHIC, PARALLEL};
-enum {METAL, PLASTIC, GOLD };
-enum { GOURAUD, PHONG, FLAT};
+enum { PERSPECTIVE, ORTHOGRAPHIC, PARALLEL };
+enum { METAL, PLASTIC, GOLD };
+enum { GOURAUD, PHONG, FLAT };
 enum { CYLINDER = 2, PLANE = 3 };
 
 enum { WOOD = 4, CLOTH = 5 };
@@ -199,7 +203,7 @@ void initShaderProgram(void)
 	program.lineShader = InitShader("..\\src\\shader\\vLineShader.glsl", "..\\src\\shader\\fLineShader.glsl");
 	program.polygonShader = InitShader("..\\src\\shader\\vPolygonShader.glsl", "..\\src\\shader\\fPolygonShader.glsl");
 	program.pickingShader = InitShader("..\\src\\shader\\vPickingShader.glsl", "..\\src\\shader\\fPickingShader.glsl");
-	
+
 #endif
 
 	glUseProgram(program.polygonShader);
@@ -211,29 +215,52 @@ void initShaderProgram(void)
 
 
 //----------------------------------------------------------------------------
-void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.polygonShader) {
+void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.polygonShader, int level = 1) {
 	glUseProgram(shaderProgram);
 	
+	meshObject.updateMatrix();
 	mat4 &scaleMatrix = meshObject.scaleMatrix;
+	mat4 &translationMatrix = meshObject.translationMatrix;
 
 	GLuint &vao = meshObject.vao.id;
 	GLuint &pickingVao = meshObject.pickingVao.id;
 	vec3 orgSurfaceColor = meshObject.objectColor[RENDER];
 
 	Mesh &mesh = meshObject.mesh;
-	mat4 &translationMatrix = meshObject.translationMatrix;
-	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix * translationMatrix;
+	
+	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix*meshObject.compositeMatrix;
+	mat4 MV = camera.viewMatrix * scene.compositeMatrix * scaleMatrix;
+	// parent transformation
+	if (level == 1)
+	{
+		MVP = camera.projViewMatrix * scene.compositeMatrix *meshObject.compositeMatrix;
+	}
+	else if (level == 2)
+	{
+		mat4 modelMatrix = arm1.scaleMatrix*arm1.translationMatrix*arm1.rotationMatrix*meshObject.translationMatrix*meshObject.rotationMatrix;		
+		MVP = camera.projViewMatrix * scene.compositeMatrix *modelMatrix;
+		MV = camera.viewMatrix * scene.compositeMatrix * modelMatrix;
+
+	}
+	else if (level == 3)
+	{
+		mat4 modelMatrix = arm1.scaleMatrix*arm1.translationMatrix*arm1.rotationMatrix*arm2.translationMatrix*arm2.rotationMatrix*meshObject.translationMatrix*meshObject.rotationMatrix;
+		MVP = camera.projViewMatrix * scene.compositeMatrix *modelMatrix;
+		MV = camera.viewMatrix * scene.compositeMatrix * modelMatrix;
+	}
+
+	
 
 	// send model view projection matrix to shader
 	GLuint u_MVP = glGetUniformLocation(shaderProgram, "u_MVP");
 	glUniformMatrix4fv(u_MVP, 1, GL_TRUE, MVP); // mat.h is row major, so use GL_TRUE to transpsoe t
 
 	// send model view matrix to shader
-	mat4 MV = camera.viewMatrix * scene.compositeMatrix * scaleMatrix;
+	/*mat4 MV = camera.viewMatrix * scene.compositeMatrix * scaleMatrix;*/
 	GLuint u_MV = glGetUniformLocation(shaderProgram, "u_MV");
 	glUniformMatrix4fv(u_MV, 1, GL_TRUE, MV); // mat.h is row major, so use GL_TRUE to transpsoe t
 
-	if (shaderProgram == program.polygonShader) {	
+	if (shaderProgram == program.polygonShader) {
 		// send light position to shader
 		vec4 lightPos = vec4(lightX, lightY, lightZ, 1.0);
 		GLuint u_lightPos = glGetUniformLocation(shaderProgram, "u_lightPos");
@@ -268,7 +295,7 @@ void renderMeshObject(MeshObject &meshObject, GLuint shaderProgram = program.pol
 		glUniform3fv(u_Color, 1, meshObject.objectColor[ORIGINAL]);
 	}
 
-	
+
 	glDrawArrays(GL_TRIANGLES, 0, mesh.size() * 3);
 
 }
@@ -278,7 +305,7 @@ void renderAxis() {
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	mat4 scaleMatrix = Angel::Scale(2.0, 2.0, 2.0);
-	
+
 	mat4 MVP = camera.projViewMatrix * scene.compositeMatrix * scaleMatrix;
 
 	// send model view projection matrix to shader
@@ -341,9 +368,9 @@ void renderToBackBuffer() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	renderMeshObject(base);
-	renderMeshObject(arm1);
-	renderMeshObject(arm2);
-	renderMeshObject(arm3);
+	renderMeshObject(arm1, program.polygonShader,1);
+	renderMeshObject(arm2, program.polygonShader, 2);
+	renderMeshObject(arm3, program.polygonShader, 3);
 	renderAxis();
 }
 
@@ -355,9 +382,9 @@ void renderToPickingBuffer() {
 	glViewport(0, 0, winWidth, winHeight);
 
 	//renderMeshObject(base, program.pickingShader);
-	renderMeshObject(arm1, program.pickingShader);
-	renderMeshObject(arm2, program.pickingShader);
-	renderMeshObject(arm3, program.pickingShader);
+	renderMeshObject(arm1, program.pickingShader, 1);
+	renderMeshObject(arm2, program.pickingShader, 2);
+	renderMeshObject(arm3, program.pickingShader, 3);
 
 }
 
@@ -537,8 +564,8 @@ void createAnimationMenus() {
 	glutAddSubMenu("Material", materialSubMenue);
 	glutAddSubMenu("Texture image", textureImgSubMenu);
 	glutAddSubMenu("Texture mapping Model", texMappingSubMenu);
-	
-	
+
+
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -546,7 +573,7 @@ void createAnimationMenus() {
 //	ColorCube.setIdentity();
 //}
 void myMouse(GLint button, GLint state, GLint x, GLint y) {
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) 
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
 	{
 		vector<GLubyte> pixels(4);
 
@@ -564,7 +591,9 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 1 seleted \n");
-			currentState = &arm1.translationMatrix[0][3];
+
+			selectedObj = 1;
+			currentState = nullptr;
 		}
 		// if hit arm1
 		else if (pixels[1] == 255) {
@@ -572,7 +601,8 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 2 seleted \n");
-			currentState = &arm2.translationMatrix[0][3];
+			selectedObj = 2;
+			currentState = nullptr;
 		}
 		// if hit arm2
 		else if (pixels[2] == 255) {
@@ -580,6 +610,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			arm1.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "arm 3 seleted \n");
+			selectedObj = 3;
 			currentState = &arm3.translationMatrix[1][3];
 		}
 		// if hit the background
@@ -590,6 +621,7 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 			arm2.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
 			fprintf(stdout, "No object selected \n");
 			currentState = nullptr;
+			selectedObj = 0;
 		}
 	}
 
@@ -599,12 +631,12 @@ void myMouse(GLint button, GLint state, GLint x, GLint y) {
 void myKeyboard(unsigned char key, int x, int y)
 {
 	double delta = 0.1; double theta = 10.0;
-
+	static int rotateCount = 0;
 	switch (key) {
 		// camera radius
-	case 'd':case 'D': camRadius += delta; 
+	case 'd':case 'D': camRadius += delta;
 		fprintf(stdout, "Camera rotaion radius increased, now is %2f\n", camRadius); break;
-	case 'a':case 'A': 
+	case 'a':case 'A':
 		if (camRadius > 1.2)
 		{
 			camRadius -= delta;
@@ -613,18 +645,18 @@ void myKeyboard(unsigned char key, int x, int y)
 		else {
 			fprintf(stdout, "Minimum Camera rotaion radius reached, press 'D' to increase radius\n"); break;
 		}
-		
+
 		// camera height
-	case 'w':case 'W': camY += delta; 
+	case 'w':case 'W': camY += delta;
 		fprintf(stdout, "Camera Y position increased, now is %2f\n", camY); break;
-	case 's':case 'S': camY -= delta; 
+	case 's':case 'S': camY -= delta;
 		fprintf(stdout, "Camera Y position decreased, now is %2f\n", camY); break;
 
 
 		// rotation speed	
-	case 'e': case 'E': speed += 0.1; 
+	case 'e': case 'E': speed += 0.1;
 		fprintf(stdout, "Camera rotation speed increased, now is %2f\n", speed); break;
-	case 'q': case 'Q': speed -= 0.1; 
+	case 'q': case 'Q': speed -= 0.1;
 		fprintf(stdout, "Camera rotation speed decreased, now is %2f\n", speed); break;
 
 
@@ -656,24 +688,64 @@ void myKeyboard(unsigned char key, int x, int y)
 
 
 		// robot arm angle 
-	case 't':case 'T': 
-		if(currentState)
+	case 't':case 'T':
+		if (currentState)
 		{
 			*currentState += 0.5;
-			fprintf(stdout, "Light Y position increased, now is %2f\n", *currentState); break;
+			fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState); break;
 		}
+		if (selectedObj == 1)
+		{
+			arm1.rotate(0, armRotSpeed, 0);
+			break;
+		}
+		else if (selectedObj == 2)
+		{
+
 			
-	case 'y':case 'Y': 
+			
+			if(armRotSpeed*rotateCount < 260)
+			{
+				arm2.rotate(0, armRotSpeed, 0);
+				rotateCount++;
+			}else
+			{
+				fprintf(stdout, "Arm2 rotation reach limit \n");
+			}
+			
+			break;
+		}
+
+	case 'y':case 'Y':
 		if (currentState)
 		{
 			*currentState -= 0.5;
-			fprintf(stdout, "Light Y position increased, now is %2f\n", *currentState); break;
+			fprintf(stdout, "Arm3 Y position increased, now is %2f\n", *currentState); break;
 		}
+		if (selectedObj == 1)
+		{
+			arm1.rotate(0, -armRotSpeed, 0);
+			break;
+		}
+		if (selectedObj == 2)
+		{
+		
+			if (armRotSpeed*rotateCount > -80)
+			{
+				arm2.rotate(0, -armRotSpeed, 0);
+				rotateCount--;
+			}
+			else
+			{
+				fprintf(stdout, "Arm2 rotation reach limit \n");
+			}
+		}
+		break;
 
 
-	//	// reset camera view and projection
-	case 'R': case 'r': 
-		camera.reset(); 
+		//	// reset camera view and projection
+	case 'R': case 'r':
+		camera.reset();
 		camRadius = 6.0;
 		camY = 0.0;
 		fprintf(stdout, "Camera reseted\n"); break;
@@ -760,7 +832,7 @@ int createOpenGLContext(const char* windowName, const int x, const int y, const 
 		err = glewInit();
 	}
 
-	
+
 
 	if (GLEW_OK != err)
 	{
@@ -801,7 +873,7 @@ void initAxis()
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points),
 		sizeof(colors), colors);
 
-	
+
 
 	// set up vertex arrays
 	GLuint aPosition = glGetAttribLocation(program.lineShader, "aPosition");
@@ -823,8 +895,8 @@ void initControlPoints()
 
 	vector<point3> &colors = controlColors;
 	vector<point3> &points = controlPoints;
-	
-	
+
+
 	// initialize colors if it is not initialized
 	if (colors.size() == 0) {
 		for (int i = 0; i < points.size(); i++) {
@@ -853,7 +925,7 @@ void initControlPoints()
 	glBufferData(GL_ARRAY_BUFFER, sizePoints + sizeColors + sizePointSize, NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizePoints, &points[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, sizePoints, sizeColors, &colors[0]);
-	glBufferSubData(GL_ARRAY_BUFFER, sizePoints+ sizeColors, sizePointSize, &pointSize[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, sizePoints + sizeColors, sizePointSize, &pointSize[0]);
 
 
 	// set up vertex arrays
@@ -998,27 +1070,27 @@ void initMesh(MeshObject &meshObject) {
 	delete[] texCoord;
 }
 
-void initModel(){
+void initModel() {
 	glUseProgram(program.polygonShader);
 
-	#ifdef __linux__ 
-		char* bounnyPath = "./resources/bound-bunny_1k.smf";
-		char* icosPath = "./resources/arm1.smf";
-		char* octahedronPath = "./resources/arm2.smf";
-	#elif _WIN32
-		
-		char* basePath = "..\\src\\resources\\base.obj";
-		char* arm1Path = "..\\src\\resources\\arm1.obj";
-		char* arm2Path = "..\\src\\resources\\arm2.obj";
-		char* arm3Path = "..\\src\\resources\\arm3.obj";
-		//char* icosPath = "..\\src\\resources\\arm1.smf";
-		//char* octahedronPath = "..\\src\\resources\\arm2.smf";
-		
-	#endif
+#ifdef __linux__ 
+	char* bounnyPath = "./resources/bound-bunny_1k.smf";
+	char* icosPath = "./resources/arm1.smf";
+	char* octahedronPath = "./resources/arm2.smf";
+#elif _WIN32
+
+	char* basePath = "..\\src\\resources\\base.obj";
+	char* arm1Path = "..\\src\\resources\\arm1.obj";
+	char* arm2Path = "..\\src\\resources\\arm2.obj";
+	char* arm3Path = "..\\src\\resources\\arm3.obj";
+	//char* icosPath = "..\\src\\resources\\arm1.smf";
+	//char* octahedronPath = "..\\src\\resources\\arm2.smf";
+
+#endif
 
 	loadSFM(basePath, base.mesh);
 	initMesh(base);
-	base.scale(0.005, 0.005, 0.005);
+	
 	base.objectColor[ORIGINAL] = color3(1.0, 1.0, 1.0);
 	base.objectColor[PICKED] = color3(1.0, 1.0, 1.0);
 	base.objectColor[RENDER] = base.objectColor[ORIGINAL];
@@ -1027,6 +1099,10 @@ void initModel(){
 
 	loadSFM(arm1Path, arm1.mesh);
 	initMesh(arm1);
+	arm1.modelOrigin = vec3(-243, -9, 486);
+
+	//! careful, this translation matrix is from child model space to parent model space
+	arm1.translate(arm1.modelOrigin);
 	arm1.scale(0.005, 0.005, 0.005);
 	arm1.objectColor[ORIGINAL] = color3(1.0, 0.0, 0.0);
 	arm1.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
@@ -1035,6 +1111,11 @@ void initModel(){
 
 	loadSFM(arm2Path, arm2.mesh);
 	initMesh(arm2);
+	arm2.modelOrigin = vec3(-243, 0, 0);
+
+	//arm2.translate(arm2.modelOrigin);
+	//! careful, this translation matrix is from child model space to parent model space
+	arm2.translate(arm2.modelOrigin - arm1.modelOrigin);
 	arm2.scale(0.005, 0.005, 0.005);
 	arm2.objectColor[ORIGINAL] = color3(0.0, 1.0, 0.0);
 	arm2.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
@@ -1043,10 +1124,17 @@ void initModel(){
 
 	loadSFM(arm3Path, arm3.mesh);
 	initMesh(arm3);
+	arm3.modelOrigin = vec3(219, 60, 8.92);
+	//arm3.translate(arm3.modelOrigin);
+	//! careful, this translation matrix is from child model space to parent model space
+	arm3.translate(arm3.modelOrigin - arm2.modelOrigin);
 	arm3.scale(0.005, 0.005, 0.005);
 	arm3.objectColor[ORIGINAL] = color3(0.0, 0.0, 1.0);
 	arm3.objectColor[PICKED] = color3(1.0, 0.5, 0.5);
 	arm3.objectColor[RENDER] = color3(1.0, 1.0, 1.0);
+
+	// set the scale matrix of the scene, since the models units are in mm, and world scale is -1 ~ 1
+	scene.scale(0.005, 0.005, 0.005);
 
 }
 
@@ -1055,7 +1143,7 @@ void initModel(){
 void initCamera(Camera &camera, int option)
 {
 	// init camera view matrix
-	vec3 cameraPosition = vec3(0.0, 0.0, 10.0);
+	vec3 cameraPosition = vec3(0.0, 2.5, 10.0);
 	vec3 cameraTarget = vec3(0.0, 0.0, 0.0);
 	vec3 cameraUp = vec3(0.0, 1.0, 0.0);
 	camera.LookAt(cameraPosition, cameraTarget, cameraUp);
@@ -1066,48 +1154,48 @@ void initCamera(Camera &camera, int option)
 
 void setCamProjection(Camera &camera, int option) {
 	// init camera projection matrix	
-	switch (option){
+	switch (option) {
 		// perspective projection
-		case PERSPECTIVE:			
-		{
-			double fovy{ 50.0 }, aspect{ 1.0 }, zNear{ 1.0 }, zFar{ 10.0 };
-			camera.Perspective(fovy, aspect, zNear, zFar);
-			fprintf(stdout, " Set camera to perspective mode \n");
-			break;
-		}
+	case PERSPECTIVE:
+	{
+		double fovy{ 80.0 }, aspect{ 1.0 }, zNear{ 1.0 }, zFar{ 50.0 };
+		camera.Perspective(fovy, aspect, zNear, zFar);
+		fprintf(stdout, " Set camera to perspective mode \n");
+		break;
+	}
 
-		// orthographic projection
-		case ORTHOGRAPHIC:		
-		{
-			double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
-			camera.Ortho(left, right, bottom, top, zNear, zFar);
-			fprintf(stdout, " Set camera to orthographic mode \n");
-			break; 
-		}
+	// orthographic projection
+	case ORTHOGRAPHIC:
+	{
+		double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
+		camera.Ortho(left, right, bottom, top, zNear, zFar);
+		fprintf(stdout, " Set camera to orthographic mode \n");
+		break;
+	}
 
 
-		// parallel projection
-		case PARALLEL:			
-		{
-			double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
-			camera.Ortho(left, right, bottom, top, zNear, zFar);
+	// parallel projection
+	case PARALLEL:
+	{
+		double left{ -2.0 }, right{ 2.0 }, bottom{ -2.0 }, top{ 2.0 }, zNear{ 0.001 }, zFar{ 100.0 };
+		camera.Ortho(left, right, bottom, top, zNear, zFar);
 
-			mat4 shearMatrix = Angel::identity();
-			double theta{ 85 };
-			double phi{ 95 };
-			shearMatrix[0][2] = -1 / tan(DegreesToRadians * theta);
-			//shearMatrix[0][2] = 0;
-			shearMatrix[1][2] = -1 / tan(DegreesToRadians * phi);
-			//shearMatrix[1][2] = 0;
+		mat4 shearMatrix = Angel::identity();
+		double theta{ 85 };
+		double phi{ 95 };
+		shearMatrix[0][2] = -1 / tan(DegreesToRadians * theta);
+		//shearMatrix[0][2] = 0;
+		shearMatrix[1][2] = -1 / tan(DegreesToRadians * phi);
+		//shearMatrix[1][2] = 0;
 
-			camera.projMatrix = camera.projMatrix*shearMatrix;
-			fprintf(stdout, " Set camera to parallel mode \n");
-			break; 
-		}
+		camera.projMatrix = camera.projMatrix*shearMatrix;
+		fprintf(stdout, " Set camera to parallel mode \n");
+		break;
+	}
 
 	}
-	
-		
+
+
 
 }
 void resetControlPoint(int selectedPoint) {
@@ -1126,7 +1214,7 @@ void selectControlPoint(int selectedPoint) {
 
 void translateControlPoint(int selectedPoint, double x, double y, double z) {
 
-	controlPoints[selectedPoint] += vec3(x,y,z);
+	controlPoints[selectedPoint] += vec3(x, y, z);
 
 }
 
@@ -1238,10 +1326,10 @@ void initTextures()
 {
 
 #ifdef __linux__ 
-	woodTex =  createTexture("./resources/wood.bmp");
+	woodTex = createTexture("./resources/wood.bmp");
 	clothTex = createTexture("./resources/cloth.bmp");
 #elif _WIN32
-	woodTex =  createTexture("..\\src\\resources\\wood.bmp");
+	woodTex = createTexture("..\\src\\resources\\wood.bmp");
 	clothTex = createTexture("..\\src\\resources\\cloth.bmp");
 #endif
 	// active the wood texture by default
@@ -1276,7 +1364,7 @@ void initScene() {
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);	
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glFrontFace(GL_CCW);
 
 	///********* main window  ****************/ 
