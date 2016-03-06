@@ -96,7 +96,7 @@ public:
 	mat4 translationMatrix = Angel::identity();
 	mat4 compositeMatrix = Angel::identity();
 
-	
+	vec3 modelOrigin;
 
 	// transformation functions
 	void rotate(const float x, const float y, const float z) {
@@ -113,6 +113,10 @@ public:
 		vec3 translationVector = vec3(x, y, z);
 		translationMatrix = Translate(translationVector)*translationMatrix;
 	}
+	void translate(const vec3 &v) {
+		vec3 translationVector = v;
+		translationMatrix = Translate(translationVector)*translationMatrix;
+	}
 
 	void setIdentity() {
 		scaleMatrix = Angel::identity();
@@ -122,7 +126,9 @@ public:
 	}
 
 	void updateMatrix() {
-		compositeMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+		//compositeMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
+		//! note the order is STR in model space, rotate first then translate
+		compositeMatrix = scaleMatrix*translationMatrix*rotationMatrix;
 	}
 
 
